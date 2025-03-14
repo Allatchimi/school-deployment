@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-school
+  namespace: school-staging
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+  - host: staging.api.school.emfi.cm
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api
+            port:
+              number: 3100
+
+  - host: staging.admin.school.emfi.cm
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: admin
+            port:
+              number: 3000
+
+  - host: staging.cdn.school.emfi.cm
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cdn
+            port:
+              number: 4100
+  tls:
+  - hosts:
+    - staging.api.school.emfi.cm
+    secretName: api-tls-secret
+  - hosts:
+    - staging.admin.school.emfi.cm
+    secretName: admin-tls-secret
+  - hosts:
+    - staging.cdn.school.emfi.cm
+    secretName: cdn-tls-secret

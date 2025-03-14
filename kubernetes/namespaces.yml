@@ -1,0 +1,25 @@
+# Development
+kind: Namespace
+apiVersion: v1
+metadata:
+    name: school-dev
+    labels:
+        name: school-dev
+
+# Staging
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+    name: school-staging
+    labels:
+        name: school-staging
+
+# Production
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+    name: school-prod
+    labels:
+        name: school-prod

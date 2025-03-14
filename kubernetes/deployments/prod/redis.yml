@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: school-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      volumes:
+      - name: redis-prod
+        persistentVolumeClaim:
+          claimName: redis-prod
+      containers:
+      - name: redis
+        image: "ghcr.io/emenec-finance/school/redis:3"
+        ports:
+        - containerPort: 6379
+        envFrom:
+          - secretRef:
+              name: app-secret
+        volumeMounts:
+        - name: redis-prod
+          mountPath: /data
+        resources:
+          limits:
+            cpu: "2000m"
+            memory: "4096Mi"
+          requests:
+            cpu: "1000m"
+            memory: "2048Mi"
+        livenessProbe:
+          exec:
+            command:
+            - ls
+            - /data
+          initialDelaySeconds: 5
+          periodSeconds: 5

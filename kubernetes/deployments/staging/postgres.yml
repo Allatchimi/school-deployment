@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: school-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      volumes:
+      - name: postgres-staging
+        persistentVolumeClaim:
+          claimName: postgres-staging
+      containers:
+      - name: postgres
+        image: "ghcr.io/emenec-finance/school/postgres:3"
+        ports:
+        - containerPort: 5432
+        envFrom:
+          - secretRef:
+              name: app-secret
+        volumeMounts:
+        - name: postgres-staging
+          mountPath: /var/lib/postgresql/data
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          exec:
+            command:
+            - ls
+            - /var/lib/postgresql/data
+          initialDelaySeconds: 5
+          periodSeconds: 5

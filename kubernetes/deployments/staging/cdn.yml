@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cdn
+  namespace: school-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cdn
+  template:
+    metadata:
+      labels:
+        app: cdn
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      volumes:
+      - name: cdn-staging
+        persistentVolumeClaim:
+          claimName: cdn-staging
+      containers:
+      - name: cdn
+        image: "ghcr.io/emenec-finance/school/cdn:3"
+        ports:
+        - containerPort: 4100
+        envFrom:
+          - secretRef:
+              name: app-secret
+        volumeMounts:
+        - name: cdn-staging
+          mountPath: /data
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          exec:
+            command:
+            - ls
+            - /data
+          initialDelaySeconds: 5
+          periodSeconds: 5

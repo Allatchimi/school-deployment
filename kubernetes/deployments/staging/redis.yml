@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: school-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      imagePullSecrets:
+      - name: ghcr-secret
+      volumes:
+      - name: redis-staging
+        persistentVolumeClaim:
+          claimName: redis-staging
+      containers:
+      - name: redis
+        image: "ghcr.io/emenec-finance/school/redis:3"
+        ports:
+        - containerPort: 6379
+        envFrom:
+          - secretRef:
+              name: app-secret
+        volumeMounts:
+        - name: redis-staging
+          mountPath: /data
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+        livenessProbe:
+          exec:
+            command:
+            - ls
+            - /data
+          initialDelaySeconds: 5
+          periodSeconds: 5

@@ -1,0 +1,114 @@
+name: SNIP Development CI
+run-name: ${{ github.actor }} is deploying SNIP to Development
+on:
+  push:
+    branches: [dev] # Branch name
+  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+jobs:
+  deploy-snip-k3s:
+    runs-on: ubuntu-latest
+    env:
+      API_TLS_CERT: ${{ secrets.DEV_API_TLS_CERT }}
+      API_TLS_KEY: ${{ secrets.DEV_API_TLS_KEY }}
+      CLIENT_TLS_CERT: ${{ secrets.DEV_CLIENT_TLS_CERT }}
+      CLIENT_TLS_KEY: ${{ secrets.DEV_CLIENT_TLS_KEY }}
+      ADMIN_TLS_CERT: ${{ secrets.DEV_ADMIN_TLS_CERT }}
+      ADMIN_TLS_KEY: ${{ secrets.DEV_ADMIN_TLS_KEY }}
+
+      NAMESPACE: 'snip-dev'
+    environment:
+      name: 'Development'
+      url: https://dev.snip.cm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.7
+        with:
+          ref: 'dev' # Branch name
+      
+      - name: Install SSH keys
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Remove old project files from server
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ${{ secrets.DEV_WORK_DIR }}"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }} && rm -rf snip-deployment && exit"
+
+      - name: Copy the repository files to the server
+        run: |
+          scp -P 22 -i ~/.ssh/id_rsa -r ../snip-deployment ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEV_WORK_DIR }}
+      
+      - name: Kubernetes - Create(if doesn't exists) namespaces
+        continue-on-error: true
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && make k-create-namespaces && exit"
+      
+      - name: Kubernetes - Create(if doesn't exists) PV and PVC
+        continue-on-error: true
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && make k-apply-volume-dev && exit"
+        
+      - name: Kubernetes - Deleting secrets GHCR [1/2]
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} && exit"
+      - name: Kubernetes - Deleting secret ingress [2/2]
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret app-secret --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret api-tls-secret --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret client-tls-secret --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret admin-tls-secret --namespace ${{ env.NAMESPACE }} && exit"
+        
+      - name: Kubernetes - Update secrets
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} --docker-server=https://ghcr.io --docker-username=${{secrets.GHCR_USERNAME}} --docker-password=${{secrets.GHCR_PASSWORD}} --docker-email=${{secrets.GHCR_EMAIL}} && exit"
+
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl create secret generic app-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="dev" --from-literal=APP_DEBUG="1" --from-literal=VAULT_ADDR=${{ secrets.VAULT_TOKEN }} --from-literal=VAULT_TOKEN=${{ secrets.VAULT_TOKEN }} && exit"
+          
+          echo "$API_TLS_CERT" > api.crt
+          echo "$API_TLS_KEY" > api.key
+          echo "$CLIENT_TLS_CERT" > client.crt
+          echo "$CLIENT_TLS_KEY" > client.key
+          echo "$ADMIN_TLS_CERT" > admin.crt
+          echo "$ADMIN_TLS_KEY" > admin.key
+
+          scp -P 22 -i ~/.ssh/id_rsa api.crt api.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEV_WORK_DIR }}/snip-deployment
+          scp -P 22 -i ~/.ssh/id_rsa client.crt client.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEV_WORK_DIR }}/snip-deployment
+          scp -P 22 -i ~/.ssh/id_rsa admin.crt admin.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.DEV_WORK_DIR }}/snip-deployment
+          
+          rm api.crt api.key client.crt client.key admin.crt admin.key
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl create secret generic api-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=api.crt --from-file=tls.key=api.key && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && rm api.crt api.key && exit"
+          
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl create secret generic client-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=client.crt --from-file=tls.key=client.key && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && rm client.crt client.key && exit"
+          
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl create secret generic admin-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=admin.crt --from-file=tls.key=admin.key && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && rm admin.crt admin.key && exit"
+
+      - name: Kubernetes - Apply deployments
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && make k-apply-deploy-postgres-dev && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && make k-apply-deploy-api-dev && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && make k-apply-deploy-client-dev && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && make k-apply-deploy-admin-dev && exit"
+    
+      - name: Kubernetes - Apply services
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl apply -f ./kubernetes/services/client.yml --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && kubectl apply -f ./kubernetes/services/admin.yml --namespace ${{ env.NAMESPACE }} && exit"
+              
+      - name: Kubernetes - Apply ingress
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.DEV_WORK_DIR }}/snip-deployment && make k-apply-ingress-dev && exit"
+
+      - name: Cleanup ENV
+        run: unset API_TLS_CERT && unset API_TLS_KEY && unset ADMIN_TLS_CERT && unset ADMIN_TLS_KEY && unset CLIENT_TLS_KEY && unset CLIENT_TLS_CERT && unset NAMESPACE
+
+      - name: Cleanup SSH dir
+        run: rm -rf ~/.ssh
+        
