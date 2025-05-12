@@ -1,4 +1,4 @@
-# Step 1: VPS security and best pratices
+# Step 1: VPS security and best practices
 
 
 1. Add new user account(GitHub for GitHub actions, and for your personal usage: prosper as example)
@@ -55,7 +55,7 @@
 
 
 
-# Step 2: Setup Packages, Kubernetes and SSH key for GitHub Action Secrets
+# Step 2: Setup Packages, Kubernetes, SSH key for GitHub Action Secrets, HELM and Prometheus/grafana for monitoring
 
 
 1. Update and install packages
@@ -74,31 +74,53 @@
     ```
     curl -sfL https://get.k3s.io | sh -
     ```
+    - Optional: start the service on boot
+        ```
+        sudo systemctl enable k3s
+        ```
 
-4. Create k3s group and add user to avoid using always sudo(need to be logged with root)
+4. Create k3s group and add user to avoid using always sudo(for every user except root)
     ```
     sudo groupadd k3s
     sudo usermod -aG k3s github
     sudo usermod -aG k3s prosper
     sudo chown -R root:k3s /etc/rancher/k3s
-    sudo chmod -R 770 /etc/rancher/k3s
+    sudo chmod -R 644 /etc/rancher/k3s
+    sudo chmod ug+x /etc/rancher/k3s
     ```
+    ```
+    echo K3S_KUBECONFIG_MODE=\"644\" >> /etc/systemd/system/k3s.service.env
+    ```
+    - Restart the server
+
+5. Create persistent volume folders for kubernetes
+    ```
+    sudo mkdir -p /mnt/emfi/school/api/data/staging
+    sudo mkdir -p /mnt/emfi/school/api/data/prod
+    sudo mkdir -p /mnt/emfi/school/admin/data/staging
+    sudo mkdir -p /mnt/emfi/school/admin/data/prod
+
+    sudo chown -R root:k3s /mnt/emfi
+    sudo chmod -R 775 /mnt/emfi
+    ```
+
 
 # Step 3: Update GitHub Action Secrets for continuous integration
 
-Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/vault-deployment/settings/secrets/actions)
+Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/school-deployment/settings/secrets/actions)
 
 - ------------- On your GitHub Action Secrets page -------------
-    - Ser Secret `SSH_HOST` with value `snip.cm`
-    - Set Secret `SSH_PRIVATE_KEY` with value from your personal computer `~/.ssh/id_rsa`. You can use this command to show the file content: 
+    - Ser Secret `SSH_HOST` with the value of your server domain name. E.g: `emfi.cm`
+    - Set Secret `SSH_PRIVATE_KEY` with value from your personal computer `~/.ssh/id_rsa`. You'll need to remove the passphrase. You can use this command to show the file content: 
         ```
         cat ~/.ssh/id_rsa
         ```
     - Set Secret `SSH_USER` with value `github`
-    - Set Secrets `PROD_API_TLS_CERT`, `PROD_API_TLS_KEY`, `STAGING_API_TLS_CERT`, `STAGING_API_TLS_KEY`, `DEV_API_TLS_CERT`, `DEV_API_TLS_KEY`
-    - Set Secrets `PROD_CLIENT_TLS_CERT`, `PROD_CLIENT_TLS_KEY`, `STAGING_CLIENT_TLS_CERT`, `STAGING_CLIENT_TLS_KEY`, `DEV_CLIENT_TLS_CERT`, `DEV_CLIENT_TLS_KEY`
-    - Set Secrets `PROD_ADMIN_TLS_CERT`, `PROD_ADMIN_TLS_KEY`, `STAGING_ADMIN_TLS_CERT`, `STAGING_ADMIN_TLS_KEY`, `DEV_ADMIN_TLS_CERT`, `DEV_ADMIN_TLS_KEY`
-    - Set Secret `PROD_WORK_DIR` with value `~/emfi/snip/prod`
-    - Set Secret `STAGING_WORK_DIR` with value `~/emfi/snip/staging`
-    - Set Secret `DEV_WORK_DIR` with value `~/emfi/snip/dev`
+    - Set Secrets `PROD_API_TLS_CERT`, `PROD_API_TLS_KEY`, `STAGING_API_TLS_CERT`, `STAGING_API_TLS_KEY` with your certificates values for production(starts with PROD_) and staging(starts with STAGING_)
+    - Set Secrets `PROD_ADMIN_TLS_CERT`, `PROD_ADMIN_TLS_KEY`, `STAGING_ADMIN_TLS_CERT`, `STAGING_ADMIN_TLS_KEY` with your certificates values for production(starts with PROD_) and staging(starts with STAGING_)
+    - Set Secret `PROD_API_WORK_DIR` with value `~/emfi/school/api/prod`
+    - Set Secret `STAGING_API_WORK_DIR` with value `~/emfi/school/api/staging`
+    - Set Secret `PROD_ADMIN_WORK_DIR` with value `~/emfi/school/admin/prod`
+    - Set Secret `STAGING_ADMIN_WORK_DIR` with value `~/emfi/school/admin/staging`
     - Set Secrets `GHCR_EMAIL` `GHCR_PASSWORD` `GHCR_USERNAME` with value your GitHub credentials. `GHCR_PASSWORD` is your personal access token with `read package` permission enabled
+    

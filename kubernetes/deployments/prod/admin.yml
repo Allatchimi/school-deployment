@@ -4,7 +4,7 @@ metadata:
   name: admin
   namespace: school-prod
 spec:
-  replicas: 1
+  replicas: 4
   selector:
     matchLabels:
       app: admin

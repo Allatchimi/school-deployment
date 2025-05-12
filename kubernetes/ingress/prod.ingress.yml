@@ -30,17 +30,6 @@ spec:
             name: admin
             port:
               number: 3000
-
-  - host: cdn.school.emfi.cm
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: cdn
-            port:
-              number: 4100
   tls:
   - hosts:
     - api.school.emfi.cm
@@ -48,6 +37,3 @@ spec:
   - hosts:
     - admin.school.emfi.cm
     secretName: admin-tls-secret
-  - hosts:
-    - cdn.school.emfi.cm
-    secretName: cdn-tls-secret

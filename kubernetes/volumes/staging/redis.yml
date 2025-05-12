@@ -20,7 +20,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - vmi2139037.contaboserver.net # Cluster/node name
+          - emfi # Cluster/node name
 
 ---
 apiVersion: v1
@@ -35,4 +35,4 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 1Gi
+      storage: 512Mi

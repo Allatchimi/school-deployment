@@ -10,7 +10,7 @@ spec:
   accessModes:
     - ReadWriteMany
   capacity:
-      storage: 1Gi
+      storage: 2Gi
   local:
     path: /mnt/postgres
   nodeAffinity:
@@ -20,7 +20,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - vmi2139037.contaboserver.net # Cluster/node name
+          - emfi # Cluster/node name
 
 ---
 apiVersion: v1

@@ -20,7 +20,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - vmi2139037.contaboserver.net # Cluster/node name
+          - emfi # Cluster/node name
 
 ---
 apiVersion: v1

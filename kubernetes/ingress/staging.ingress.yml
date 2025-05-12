@@ -2,14 +2,14 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-school
-  namespace: school-dev
+  namespace: school-staging
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   rules:
-  - host: dev.api.school.emfi.cm
+  - host: staging.api.school.emfi.cm
     http:
       paths:
       - path: /
@@ -20,7 +20,7 @@ spec:
             port:
               number: 3100
 
-  - host: dev.admin.school.emfi.cm
+  - host: staging.admin.school.emfi.cm
     http:
       paths:
       - path: /
@@ -30,24 +30,10 @@ spec:
             name: admin
             port:
               number: 3000
-
-  - host: dev.cdn.school.emfi.cm
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: cdn
-            port:
-              number: 4100
   tls:
   - hosts:
-    - dev.api.school.emfi.cm
+    - staging.api.school.emfi.cm
     secretName: api-tls-secret
   - hosts:
-    - dev.admin.school.emfi.cm
+    - staging.admin.school.emfi.cm
     secretName: admin-tls-secret
-  - hosts:
-    - dev.cdn.school.emfi.cm
-    secretName: cdn-tls-secret
