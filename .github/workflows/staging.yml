@@ -8,6 +8,12 @@ jobs:
   deploy-school-k3s:
     runs-on: ubuntu-latest
     env:
+      POSTGRES_ENV: ${{ secrets.STAGING_POSTGRES_ENV }}
+      REDIS_ENV: ${{ secrets.STAGING_REDIS_ENV }}
+      API_ENV: ${{ secrets.STAGING_API_ENV }}
+      API_JWT_PRIVATE_KEY: ${{ secrets.STAGING_API_JWT_PRIVATE_KEY }}
+      API_JWT_PUBLIC_KEY: ${{ secrets.STAGING_API_JWT_PUBLIC_KEY }}
+
       API_TLS_CERT: ${{ secrets.STAGING_API_TLS_CERT }}
       API_TLS_KEY: ${{ secrets.STAGING_API_TLS_KEY }}
       ADMIN_TLS_CERT: ${{ secrets.STAGING_ADMIN_TLS_CERT }}
@@ -58,7 +64,7 @@ jobs:
       - name: Kubernetes - Deleting secret ingress [2/2]
         continue-on-error: true
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret app-secret --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret admin-env-secret --namespace ${{ env.NAMESPACE }} && exit"
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret api-tls-secret --namespace ${{ env.NAMESPACE }} && exit"
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret admin-tls-secret --namespace ${{ env.NAMESPACE }} && exit"
 
@@ -66,22 +72,46 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} --docker-server=https://ghcr.io --docker-username=${{secrets.GHCR_USERNAME}} --docker-password=${{secrets.GHCR_PASSWORD}} --docker-email=${{secrets.GHCR_EMAIL}} && exit"
 
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret generic app-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="staging" --from-literal=APP_DEBUG="1" && exit"
+          # ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret generic admin-env-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="staging"  && exit"
 
           echo "$API_TLS_CERT" > api.crt
           echo "$API_TLS_KEY" > api.key
           echo "$ADMIN_TLS_CERT" > admin.crt
           echo "$ADMIN_TLS_KEY" > admin.key
 
-          scp -P 22 -i ~/.ssh/id_rsa api.crt api.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
-          scp -P 22 -i ~/.ssh/id_rsa admin.crt admin.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
-
+          scp -P 22 -i ~/.ssh/id_rsa api.crt api.key admin.crt admin.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
           rm api.crt api.key admin.crt admin.key
+          
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret generic api-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=api.crt --from-file=tls.key=api.key && exit"
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && rm api.crt api.key && exit"
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret generic admin-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=admin.crt --from-file=tls.key=admin.key && exit"
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && rm admin.crt admin.key && exit"
+      
+      - name: Kubernetes - Deleting config map
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} && exit"
+
+      - name: Kubernetes - Update config map
+        continue-on-error: true
+        run: |
+          echo "$POSTGRES_ENV" > postgres.env
+          echo "$REDIS_ENV" > redis.env
+          echo "$API_ENV" > app.env
+          echo "$API_JWT_PRIVATE_KEY" > private.pem
+          echo "$API_JWT_PUBLIC_KEY" > public.pem
+
+          scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env api.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
+          rm postgres.env redis.env api.env private.pem public.pem
+
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }} && exit"
 
       - name: Kubernetes - Apply deployments
         run: |

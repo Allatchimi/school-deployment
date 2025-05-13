@@ -16,27 +16,27 @@ spec:
       imagePullSecrets:
       - name: ghcr-secret
       volumes:
-      - name: postgres-prod
+      - name: postgres-data
         persistentVolumeClaim:
-          claimName: postgres-prod
+          claimName: postgres
       containers:
       - name: postgres
-        image: "ghcr.io/emenec-finance/school/postgres:3"
+        image: "postgres:16-alpine"
         ports:
         - containerPort: 5432
         envFrom:
-          - secretRef:
-              name: app-secret
+          - configMapRef:
+            name: postgres-env-config
         volumeMounts:
-        - name: postgres-prod
+        - name: postgres-data
           mountPath: /var/lib/postgresql/data
         resources:
           limits:
-            cpu: "2000m"
-            memory: "4096Mi"
+            cpu: "6"
+            memory: "16Gi"
           requests:
-            cpu: "1000m"
-            memory: "2048Mi"
+            cpu: "3"
+            memory: "8Gi"
         livenessProbe:
           exec:
             command:

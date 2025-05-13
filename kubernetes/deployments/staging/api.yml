@@ -4,7 +4,7 @@ metadata:
   name: api
   namespace: school-staging
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: api
@@ -15,21 +15,41 @@ spec:
     spec:
       imagePullSecrets:
       - name: ghcr-secret
+      volumes:
+      - name: api-env-volume
+        configMap:
+          name: api-env-config
+          defaultMode: 0444  # Read only
+          items:
+            - key: app.env
+              path: app.env
+      - name: api-jwt-volume
+        configMap:
+          name: api-jwt-config
+          defaultMode: 0444  # Read only
+          items:
+            - key: private.pem
+              path: private.pem
+            - key: public.pem
+              path: public.pem
       containers:
       - name: api
-        image: "ghcr.io/emenec-finance/school/api:3"
+        image: "ghcr.io/emenec-finance/school-api/school-api:3"
         ports:
         - containerPort: 3100
-        envFrom:
-          - secretRef:
-              name: app-secret
+        volumeMounts:
+        - name: api-env-volume
+          mountPath: /app/app.env
+          subPath: app.env
+        - name: api-jwt-volume
+          mountPath: /app/assets/private/keys/jwt
         resources:
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "250m"
+            memory: "256Mi"
           requests:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "100m"
+            memory: "128Mi"
         livenessProbe:
           exec:
             command:

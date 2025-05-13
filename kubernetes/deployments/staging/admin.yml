@@ -4,7 +4,7 @@ metadata:
   name: admin
   namespace: school-staging
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: admin
@@ -17,19 +17,19 @@ spec:
       - name: ghcr-secret
       containers:
       - name: admin
-        image: "ghcr.io/emenec-finance/school/admin:3"
+        image: "ghcr.io/emenec-finance/school-admin/school-admin:3"
         ports:
         - containerPort: 3000
         envFrom:
           - secretRef:
-                name: app-secret
+                name: admin-env-secret
         resources:
           limits:
-            cpu: "500m"
+            cpu: "250m"
             memory: "512Mi"
           requests:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "100m"
+            memory: "256Mi"
         livenessProbe:
           exec:
             command:

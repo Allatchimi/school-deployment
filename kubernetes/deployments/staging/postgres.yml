@@ -16,24 +16,24 @@ spec:
       imagePullSecrets:
       - name: ghcr-secret
       volumes:
-      - name: postgres-staging
+      - name: postgres-data
         persistentVolumeClaim:
-          claimName: postgres-staging
+          claimName: postgres
       containers:
       - name: postgres
-        image: "ghcr.io/emenec-finance/school/postgres:3"
+        image: "postgres:16-alpine"
         ports:
         - containerPort: 5432
         envFrom:
-          - secretRef:
-              name: app-secret
+          - configMapRef:
+            name: postgres-env-config
         volumeMounts:
-        - name: postgres-staging
+        - name: postgres-data
           mountPath: /var/lib/postgresql/data
         resources:
           limits:
-            cpu: "500m"
-            memory: "512Mi"
+            cpu: "1"
+            memory: "2Gi"
           requests:
             cpu: "500m"
             memory: "512Mi"

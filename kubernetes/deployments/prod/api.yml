@@ -4,7 +4,7 @@ metadata:
   name: api
   namespace: school-prod
 spec:
-  replicas: 3
+  replicas: 4
   selector:
     matchLabels:
       app: api
@@ -17,19 +17,16 @@ spec:
       - name: ghcr-secret
       containers:
       - name: api
-        image: "ghcr.io/emenec-finance/school/api:3"
+        image: "ghcr.io/emenec-finance/school-api/school-api:3"
         ports:
         - containerPort: 3100
-        envFrom:
-          - secretRef:
-              name: app-secret
         resources:
           limits:
-            cpu: "1000m"
-            memory: "1536Mi"
-          requests:
             cpu: "750m"
-            memory: "1024Mi"
+            memory: "1Gi"
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
         livenessProbe:
           exec:
             command:

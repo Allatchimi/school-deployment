@@ -16,27 +16,27 @@ spec:
       imagePullSecrets:
       - name: ghcr-secret
       volumes:
-      - name: redis-prod
+      - name: redis-data
         persistentVolumeClaim:
-          claimName: redis-prod
+          claimName: redis
       containers:
       - name: redis
-        image: "ghcr.io/emenec-finance/school/redis:3"
+        image: "redis:7.4.0-alpine"
         ports:
         - containerPort: 6379
         envFrom:
-          - secretRef:
-              name: app-secret
+          - configMapRef:
+            name: redis-env-config
         volumeMounts:
-        - name: redis-prod
+        - name: redis-data
           mountPath: /data
         resources:
           limits:
-            cpu: "2000m"
-            memory: "4096Mi"
+            cpu: "2"
+            memory: "4Gi"
           requests:
-            cpu: "1000m"
-            memory: "2048Mi"
+            cpu: "1"
+            memory: "2Gi"
         livenessProbe:
           exec:
             command:
