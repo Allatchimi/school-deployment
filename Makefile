@@ -1,12 +1,8 @@
-.PHONY: k-create-namespaces k-set-namespace-dev k-set-namespace-staging k-set-namespace-prod
+.PHONY: k-create-namespaces k-set-namespace-staging k-set-namespace-prod
 k-create-namespaces:
 	@echo ""; \
 	echo "----- Creating namespaces namespace -----"; \
 	kubectl create -f ./kubernetes/namespaces.yml
-k-set-namespace-dev:
-	@echo ""; \
-	echo "----- Setting up dev namespace -----"; \
-	kubectl config set-context --current --namespace=snip-dev
 k-set-namespace-staging:
 	@echo ""; \
 	echo "----- Setting up staging namespace -----"; \
@@ -29,46 +25,44 @@ k-apply-ghcr-secret:
 	read -p "Enter your email(default is emfi.tech@gmail.com): " gEmail; \
 	kubectl create secret docker-registry ghcr-secret --docker-server=https://ghcr.io --docker-username=$${gUsername:-"emenec-finance"} --docker-password=$$gPass --docker-email=$${gEmail:-"emfi.tech@gmail.com"}
 
-.PHONY: k-apply-volume-dev k-apply-volume-staging k-apply-volume-prod k-delete-volumes
-k-apply-volume-dev:
-	@kubectl apply -f ./kubernetes/volumes/dev/postgres.yml
+.PHONY: k-apply-volume-staging k-apply-volume-prod k-delete-volumes
 k-apply-volume-staging:
+	@kubectl apply -f ./kubernetes/volumes/staging/redis.yml
 	@kubectl apply -f ./kubernetes/volumes/staging/postgres.yml
 k-apply-volume-prod:
+	@kubectl apply -f ./kubernetes/volumes/prod/redis.yml
 	@kubectl apply -f ./kubernetes/volumes/prod/postgres.yml
 k-delete-volumes:
 	@kubectl delete pvc --all; \
 	kubectl delete pv --all
 
-.PHONY: k-apply-deploy-postgres-dev k-apply-deploy-postgres-staging k-apply-deploy-postgres-prod
-k-apply-deploy-postgres-dev:
-	@kubectl apply -f ./kubernetes/deployments/dev/postgres.yml
+.PHONY: k-apply-deploy-redis-staging k-apply-deploy-redis-prod
+k-apply-deploy-redis-staging:
+	@kubectl apply -f ./kubernetes/deployments/staging/redis.yml
+k-apply-deploy-redis-prod:
+	@kubectl apply -f ./kubernetes/deployments/prod/redis.yml
+
+.PHONY: k-apply-deploy-postgres-staging k-apply-deploy-postgres-prod
 k-apply-deploy-postgres-staging:
 	@kubectl apply -f ./kubernetes/deployments/staging/postgres.yml
 k-apply-deploy-postgres-prod:
 	@kubectl apply -f ./kubernetes/deployments/prod/postgres.yml
 
 
-.PHONY: k-apply-deploy-api-dev k-apply-deploy-api-staging k-apply-deploy-api-prod
-k-apply-deploy-api-dev:
-	@kubectl apply -f ./kubernetes/deployments/dev/api.yml
+.PHONY: k-apply-deploy-api-staging k-apply-deploy-api-prod
 k-apply-deploy-api-staging:
 	@kubectl apply -f ./kubernetes/deployments/staging/api.yml
 k-apply-deploy-api-prod:
 	@kubectl apply -f ./kubernetes/deployments/prod/api.yml
 
 
-.PHONY: k-apply-deploy-client-dev k-apply-deploy-client-staging k-apply-deploy-client-prod
-k-apply-deploy-client-dev:
-	@kubectl apply -f ./kubernetes/deployments/dev/client.yml
+.PHONY: k-apply-deploy-client-staging k-apply-deploy-client-prod
 k-apply-deploy-client-staging:
 	@kubectl apply -f ./kubernetes/deployments/staging/client.yml
 k-apply-deploy-client-prod:
 	@kubectl apply -f ./kubernetes/deployments/prod/client.yml
 
-.PHONY: k-apply-deploy-admin-dev k-apply-deploy-admin-staging k-apply-deploy-admin-prod
-k-apply-deploy-admin-dev:
-	@kubectl apply -f ./kubernetes/deployments/dev/admin.yml
+.PHONY: k-apply-deploy-admin-staging k-apply-deploy-admin-prod
 k-apply-deploy-admin-staging:
 	@kubectl apply -f ./kubernetes/deployments/staging/admin.yml
 k-apply-deploy-admin-prod:
@@ -80,18 +74,14 @@ k-delete-deploy:
 
 .PHONY: k-apply-services k-delete-services
 k-apply-services:
+	@kubectl apply -f ./kubernetes/services/redis.yml
 	@kubectl apply -f ./kubernetes/services/postgres.yml
 	@kubectl apply -f ./kubernetes/services/api.yml
-	@kubectl apply -f ./kubernetes/services/client.yml
 	@kubectl apply -f ./kubernetes/services/admin.yml
 k-delete-services:
 	@kubectl delete service --all
 
-.PHONY: k-apply-ingress-dev k-apply-ingress-staging k-apply-ingress-prod
-k-apply-ingress-dev:
-	@echo ""; \
-	echo "----- Applying ingress -----"; \
-	kubectl apply -f ./kubernetes/ingress/dev.ingress.yml
+.PHONY: k-apply-ingress-staging k-apply-ingress-prod
 k-apply-ingress-staging:
 	@echo ""; \
 	echo "----- Applying ingress -----"; \
@@ -101,13 +91,13 @@ k-apply-ingress-prod:
 	echo "----- Applying ingress -----"; \
 	kubectl apply -f ./kubernetes/ingress/prod.ingress.yml
 
-.PHONY: k-logs-postgres k-logs-api k-logs-client k-logs-admin
+.PHONY: k-logs-redis k-logs-postgres k-logs-api k-logs-admin
+k-logs-redis:
+	@kubectl logs -f -l app=redis
 k-logs-postgres:
 	@kubectl logs -f -l app=postgres
 k-logs-api:
 	@kubectl logs -f -l app=api
-k-logs-client:
-	@kubectl logs -f -l app=client
 k-logs-admin:
 	@kubectl logs -f -l app=admin
 
@@ -121,14 +111,6 @@ mini-start:
 	@minikube addons enable ingress
 
 # Setup environment
-mini-setup-dev:
-	@make k-create-namespaces; \
-	make k-set-namespace-dev; \
-	make k-apply-ghcr-secret; \
-	make k-apply-app-secret-dev; \
-	make k-apply-volume-dev; \
-	make k-apply-services; \
-	make k-apply-ingress-dev
 mini-setup-staging:
 	@make k-create-namespaces; \
 	make k-set-namespace-staging; \

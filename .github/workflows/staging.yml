@@ -1,34 +1,40 @@
-name: SNIP Staging CI
-run-name: ${{ github.actor }} is deploying SNIP to Staging
+name: School Staging CI
+run-name: ${{ github.actor }} is deploying School to Staging
 on:
   push:
     branches: [staging] # Branch name
   workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
 jobs:
-  deploy-snip-k3s:
+  deploy-school-k3s:
     runs-on: ubuntu-latest
     env:
+      POSTGRES_ENV: ${{ secrets.STAGING_POSTGRES_ENV }}
+      REDIS_ENV: ${{ secrets.STAGING_REDIS_ENV }}
+      API_ENV: ${{ secrets.STAGING_API_ENV }}
+      API_JWT_PRIVATE_KEY: ${{ secrets.STAGING_API_JWT_PRIVATE_KEY }}
+      API_JWT_PUBLIC_KEY: ${{ secrets.STAGING_API_JWT_PUBLIC_KEY }}
+
       API_TLS_CERT: ${{ secrets.STAGING_API_TLS_CERT }}
       API_TLS_KEY: ${{ secrets.STAGING_API_TLS_KEY }}
-      CLIENT_TLS_CERT: ${{ secrets.STAGING_CLIENT_TLS_CERT }}
-      CLIENT_TLS_KEY: ${{ secrets.STAGING_CLIENT_TLS_KEY }}
       ADMIN_TLS_CERT: ${{ secrets.STAGING_ADMIN_TLS_CERT }}
       ADMIN_TLS_KEY: ${{ secrets.STAGING_ADMIN_TLS_KEY }}
 
-      NAMESPACE: 'snip-staging'
+      NAMESPACE: "school-staging"
     environment:
-      name: 'Staging'
-      url: https://staging.snip.cm
+      name: "Staging"
+      url: |
+        https://staging.api.school.emfi.cm
+        https://staging.admin.school.emfi.cm
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
         with:
-          ref: 'staging' # Branch name
-      
+          ref: "staging" # Branch name
+
       - name: Install SSH keys
         run: |
           mkdir -p ~/.ssh/
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
@@ -36,20 +42,21 @@ jobs:
         continue-on-error: true
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ${{ secrets.STAGING_WORK_DIR }}"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }} && rm -rf snip-deployment && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }} && rm -rf school-deployment && exit"
 
       - name: Copy the repository files to the server
         run: |
-          scp -P 22 -i ~/.ssh/id_rsa -r ../snip-deployment ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}
-      
+          scp -P 22 -i ~/.ssh/id_rsa -r ../school-deployment ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}
+
       - name: Kubernetes - Create(if doesn't exists) namespaces
         continue-on-error: true
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && make k-create-namespaces && exit"
-      
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-create-namespaces && exit"
+
       - name: Kubernetes - Create(if doesn't exists) PV and PVC
         continue-on-error: true
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && make k-apply-volume-staging && exit"
-        
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-apply-volume-staging && exit"
+
       - name: Kubernetes - Deleting secrets GHCR [1/2]
         continue-on-error: true
         run: |
@@ -57,54 +64,71 @@ jobs:
       - name: Kubernetes - Deleting secret ingress [2/2]
         continue-on-error: true
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret app-secret --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret admin-env-secret --namespace ${{ env.NAMESPACE }} && exit"
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret api-tls-secret --namespace ${{ env.NAMESPACE }} && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret client-tls-secret --namespace ${{ env.NAMESPACE }} && exit"
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret admin-tls-secret --namespace ${{ env.NAMESPACE }} && exit"
-        
+
       - name: Kubernetes - Update secrets
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} --docker-server=https://ghcr.io --docker-username=${{secrets.GHCR_USERNAME}} --docker-password=${{secrets.GHCR_PASSWORD}} --docker-email=${{secrets.GHCR_EMAIL}} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} --docker-server=https://ghcr.io --docker-username=${{secrets.GHCR_USERNAME}} --docker-password=${{secrets.GHCR_PASSWORD}} --docker-email=${{secrets.GHCR_EMAIL}} && exit"
 
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl create secret generic app-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="staging" --from-literal=APP_DEBUG="1" --from-literal=VAULT_ADDR=${{ secrets.VAULT_TOKEN }} --from-literal=VAULT_TOKEN=${{ secrets.VAULT_TOKEN }} && exit"
-          
+          # ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret generic admin-env-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="staging"  && exit"
+
           echo "$API_TLS_CERT" > api.crt
           echo "$API_TLS_KEY" > api.key
-          echo "$CLIENT_TLS_CERT" > client.crt
-          echo "$CLIENT_TLS_KEY" > client.key
           echo "$ADMIN_TLS_CERT" > admin.crt
           echo "$ADMIN_TLS_KEY" > admin.key
 
-          scp -P 22 -i ~/.ssh/id_rsa api.crt api.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/snip-deployment
-          scp -P 22 -i ~/.ssh/id_rsa client.crt client.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/snip-deployment
-          scp -P 22 -i ~/.ssh/id_rsa admin.crt admin.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/snip-deployment
+          scp -P 22 -i ~/.ssh/id_rsa api.crt api.key admin.crt admin.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
+          rm api.crt api.key admin.crt admin.key
           
-          rm api.crt api.key client.crt client.key admin.crt admin.key
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl create secret generic api-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=api.crt --from-file=tls.key=api.key && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && rm api.crt api.key && exit"
-          
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl create secret generic client-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=client.crt --from-file=tls.key=client.key && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && rm client.crt client.key && exit"
-          
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl create secret generic admin-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=admin.crt --from-file=tls.key=admin.key && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && rm admin.crt admin.key && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret generic api-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=api.crt --from-file=tls.key=api.key && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && rm api.crt api.key && exit"
+
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret generic admin-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=admin.crt --from-file=tls.key=admin.key && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && rm admin.crt admin.key && exit"
+      
+      - name: Kubernetes - Deleting config map
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} && exit"
+
+      - name: Kubernetes - Update config map
+        continue-on-error: true
+        run: |
+          echo "$POSTGRES_ENV" > postgres.env
+          echo "$REDIS_ENV" > redis.env
+          echo "$API_ENV" > app.env
+          echo "$API_JWT_PRIVATE_KEY" > private.pem
+          echo "$API_JWT_PUBLIC_KEY" > public.pem
+
+          scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env api.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
+          rm postgres.env redis.env api.env private.pem public.pem
+
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }} && exit"
 
       - name: Kubernetes - Apply deployments
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && make k-apply-deploy-postgres-staging && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && make k-apply-deploy-api-staging && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && make k-apply-deploy-client-staging && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && make k-apply-deploy-admin-staging && exit"
-    
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-apply-deploy-redis-staging && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-apply-deploy-postgres-staging && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-apply-deploy-api-staging && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-apply-deploy-admin-staging && exit"
+
       - name: Kubernetes - Apply services
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }} && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }} && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl apply -f ./kubernetes/services/client.yml --namespace ${{ env.NAMESPACE }} && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && kubectl apply -f ./kubernetes/services/admin.yml --namespace ${{ env.NAMESPACE }} && exit"
-              
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl apply -f ./kubernetes/services/redis.yml --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }} && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl apply -f ./kubernetes/services/admin.yml --namespace ${{ env.NAMESPACE }} && exit"
+
       - name: Kubernetes - Apply ingress
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/snip-deployment && make k-apply-ingress-staging && exit"
+        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-apply-ingress-staging && exit"
 
       - name: Cleanup ENV
         run: unset API_TLS_CERT && unset API_TLS_KEY && unset ADMIN_TLS_CERT && unset ADMIN_TLS_KEY && unset CLIENT_TLS_KEY && unset CLIENT_TLS_CERT && unset NAMESPACE

@@ -1,8 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: redis-prod
-  namespace: school-prod
+  name: emfi-school-redis-prod
 spec:
   storageClassName: standard
   volumeMode: Filesystem
@@ -10,9 +9,9 @@ spec:
   accessModes:
     - ReadWriteMany
   capacity:
-      storage: 5Gi
+      storage: 10Gi
   local:
-    path: /mnt
+    path: /mnt/emfi/school/redis/data/prod
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -20,19 +19,19 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - vmi2139037.contaboserver.net # Cluster/node name
+          - emfi # Cluster/node name
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: redis-prod
+  name: redis
   namespace: school-prod
 spec:
-  volumeName: redis-prod
+  volumeName: school-redis-prod
   storageClassName: standard
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: 5Gi
+      storage: 4Gi
