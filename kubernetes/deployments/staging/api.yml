@@ -25,9 +25,14 @@ spec:
         - name: api-jwt-volume
           configMap:
             name: api-jwt-config
+            items:
+              - key: private.pem
+                path: private.pem
+              - key: public.pem
+                path: public.pem
       containers:
         - name: api
-          image: "ghcr.io/emenec-finance/school-api/school-api:5"
+          image: "ghcr.io/emenec-finance/school-api/school-api:11"
           ports:
             - containerPort: 3100
           volumeMounts:
@@ -35,7 +40,11 @@ spec:
               mountPath: /app/app.env
               subPath: app.env
             - name: api-jwt-volume
-              mountPath: /app/assets/private/keys/jwt
+              mountPath: /app/assets/private/keys/jwt/private.pem
+              subPath: private.pem
+            - name: api-jwt-volume
+              mountPath: /app/assets/private/keys/jwt/public.pem
+              subPath: public.pem
           resources:
             limits:
               cpu: "250m"
