@@ -24,12 +24,12 @@ spec:
             name: api-jwt-config
       containers:
         - name: api
-          image: "ghcr.io/emenec-finance/school-api/school-api:2"
+          image: "ghcr.io/emenec-finance/school-api/school-api:4"
           ports:
             - containerPort: 3100
           volumeMounts:
             - name: api-env-volume
-              mountPath: /app/app.env
+              mountPath: /app
             - name: api-jwt-volume
               mountPath: /app/assets/private/keys/jwt
           resources:
