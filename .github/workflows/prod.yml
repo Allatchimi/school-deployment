@@ -71,8 +71,7 @@ jobs:
       - name: Kubernetes - Update secrets
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.PROD_WORK_DIR }}/school-deployment && kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} --docker-server=https://ghcr.io --docker-username=${{secrets.GHCR_USERNAME}} --docker-password=${{secrets.GHCR_PASSWORD}} --docker-email=${{secrets.GHCR_EMAIL}} && exit"
-
-          # ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.PROD_WORK_DIR }}/school-deployment && kubectl create secret generic admin-env-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="prod"  && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.PROD_WORK_DIR }}/school-deployment && kubectl create secret generic admin-env-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="prod"  && exit"
 
           echo "$API_TLS_CERT" > api.crt
           echo "$API_TLS_KEY" > api.key
