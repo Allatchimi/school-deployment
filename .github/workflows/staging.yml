@@ -125,8 +125,8 @@ jobs:
           echo "$API_JWT_PRIVATE_KEY" > private.pem
           echo "$API_JWT_PUBLIC_KEY" > public.pem
 
-          scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env api.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
-          rm postgres.env redis.env api.env private.pem public.pem
+          scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
+          rm postgres.env redis.env app.env private.pem public.pem
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} || echo "postgres-env-config already exists or failed!"
