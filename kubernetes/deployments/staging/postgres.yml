@@ -14,33 +14,33 @@ spec:
         app: postgres
     spec:
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
       volumes:
-      - name: postgres-data
-        persistentVolumeClaim:
-          claimName: postgres
+        - name: postgres-volume
+          persistentVolumeClaim:
+            claimName: postgres
       containers:
-      - name: postgres
-        image: "postgres:16-alpine"
-        ports:
-        - containerPort: 5432
-        envFrom:
-          - configMapRef:
-            name: postgres-env-config
-        volumeMounts:
-        - name: postgres-data
-          mountPath: /var/lib/postgresql/data
-        resources:
-          limits:
-            cpu: "1"
-            memory: "2Gi"
-          requests:
-            cpu: "500m"
-            memory: "512Mi"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /var/lib/postgresql/data
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: postgres
+          image: "postgres:16"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+              name: postgres-env-config
+          volumeMounts:
+            - name: postgres-volume
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command:
+                - ls
+                - /var/lib/postgresql/data
+            initialDelaySeconds: 5
+            periodSeconds: 5

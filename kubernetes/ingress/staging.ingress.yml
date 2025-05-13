@@ -35,5 +35,5 @@ spec:
     - staging.api.school.emfi.cm
     secretName: api-tls-secret
   - hosts:
-    - staging.admin.school.emfi.cm
+    - staging.school.emfi.cm
     secretName: admin-tls-secret
