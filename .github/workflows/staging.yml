@@ -22,9 +22,7 @@ jobs:
       NAMESPACE: "school-staging"
     environment:
       name: "Staging"
-      url: |
-        https://staging.api.school.emfi.cm
-        https://staging.admin.school.emfi.cm
+      url: https://staging.admin.school.emfi.cm
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
@@ -167,9 +165,6 @@ jobs:
             cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
             make k-apply-ingress-staging
           EOF
-
-      - name: Cleanup ENV
-        run: unset API_TLS_CERT && unset API_TLS_KEY && unset ADMIN_TLS_CERT && unset ADMIN_TLS_KEY && unset CLIENT_TLS_KEY && unset CLIENT_TLS_CERT && unset NAMESPACE
 
       - name: Cleanup SSH dir
         run: rm -rf ~/.ssh
