@@ -35,5 +35,5 @@ spec:
     - api.school.emfi.cm
     secretName: api-tls-secret
   - hosts:
-    - admin.school.emfi.cm
+    - school.emfi.cm
     secretName: admin-tls-secret
