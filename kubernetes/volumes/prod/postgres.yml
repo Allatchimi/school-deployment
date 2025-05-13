@@ -28,7 +28,7 @@ metadata:
   name: postgres
   namespace: school-prod
 spec:
-  volumeName: school-postgres-prod
+  volumeName: emfi-school-postgres-prod
   storageClassName: standard
   accessModes:
     - ReadWriteMany

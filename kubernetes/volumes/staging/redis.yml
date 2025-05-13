@@ -28,7 +28,7 @@ metadata:
   name: redis
   namespace: school-staging
 spec:
-  volumeName: school-redis-staging
+  volumeName: emfi-school-redis-staging
   storageClassName: standard
   accessModes:
     - ReadWriteMany

@@ -28,7 +28,7 @@ metadata:
   name: redis
   namespace: school-prod
 spec:
-  volumeName: school-redis-prod
+  volumeName: emfi-school-redis-prod
   storageClassName: standard
   accessModes:
     - ReadWriteMany
