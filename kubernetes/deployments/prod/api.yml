@@ -17,7 +17,7 @@ spec:
       - name: ghcr-secret
       containers:
       - name: api
-        image: "ghcr.io/emenec-finance/school-api/school-api:5"
+        image: "ghcr.io/emenec-finance/school-api/school-api:7"
         ports:
         - containerPort: 3100
         resources:
