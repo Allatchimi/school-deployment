@@ -118,9 +118,7 @@ Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/schoo
     - Set Secret `SSH_USER` with value `github`
     - Set Secrets `PROD_API_TLS_CERT`, `PROD_API_TLS_KEY`, `STAGING_API_TLS_CERT`, `STAGING_API_TLS_KEY` with your certificates values for production(starts with PROD_) and staging(starts with STAGING_)
     - Set Secrets `PROD_ADMIN_TLS_CERT`, `PROD_ADMIN_TLS_KEY`, `STAGING_ADMIN_TLS_CERT`, `STAGING_ADMIN_TLS_KEY` with your certificates values for production(starts with PROD_) and staging(starts with STAGING_)
-    - Set Secret `PROD_API_WORK_DIR` with value `~/emfi/school/api/prod`
-    - Set Secret `STAGING_API_WORK_DIR` with value `~/emfi/school/api/staging`
-    - Set Secret `PROD_ADMIN_WORK_DIR` with value `~/emfi/school/admin/prod`
-    - Set Secret `STAGING_ADMIN_WORK_DIR` with value `~/emfi/school/admin/staging`
+    - Set Secret `PROD_WORK_DIR` with value `~/emfi/school/deployment/api-admin/prod`
+    - Set Secret `STAGING_WORK_DIR` with value `~/emfi/school/deployment/api-admin/staging`
     - Set Secrets `GHCR_EMAIL` `GHCR_PASSWORD` `GHCR_USERNAME` with value your GitHub credentials. `GHCR_PASSWORD` is your personal access token with `read package` permission enabled
     
