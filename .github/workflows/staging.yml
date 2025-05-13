@@ -51,23 +51,22 @@ jobs:
         run: |
           scp -P 22 -i ~/.ssh/id_rsa -r ../school-deployment ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}
 
-      - name: Kubernetes - Create(if doesn't exists) namespaces
-        continue-on-error: true
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-create-namespaces && exit"
+      - name: Kubernetes - Create namespaces
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
+            make k-create-namespaces || true
+          EOF
 
-      - name: Kubernetes - Create(if doesn't exists) PV and PVC
+      - name: Kubernetes - Create PV and PVC
         continue-on-error: true
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-apply-volume-staging && exit"
 
-      - name: Kubernetes - Deleting secrets GHCR [1/2]
-        continue-on-error: true
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} && exit"
-      - name: Kubernetes - Deleting secret ingress [2/2]
-        continue-on-error: true
+      - name: Kubernetes - Delete secrets
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} || true
             kubectl delete secret admin-env-secret --namespace ${{ env.NAMESPACE }} || true
             kubectl delete secret api-tls-secret --namespace ${{ env.NAMESPACE }} || true
             kubectl delete secret admin-tls-secret --namespace ${{ env.NAMESPACE }} || true
@@ -75,8 +74,14 @@ jobs:
 
       - name: Kubernetes - Create secrets
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} --docker-server=https://ghcr.io --docker-username=${{secrets.GHCR_USERNAME}} --docker-password=${{secrets.GHCR_PASSWORD}} --docker-email=${{secrets.GHCR_EMAIL}} && exit"
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && kubectl create secret generic admin-env-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="staging"  && exit"
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
+
+            kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} \
+            --docker-server=https://ghcr.io --docker-username=${{secrets.GHCR_USERNAME}} \
+            --docker-password=${{secrets.GHCR_PASSWORD}} --docker-email=${{secrets.GHCR_EMAIL}}"
+            kubectl create secret generic admin-env-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="staging"
+          EOF
 
           echo "$API_TLS_CERT" > api.crt
           echo "$API_TLS_KEY" > api.key
@@ -85,7 +90,7 @@ jobs:
 
           scp -P 22 -i ~/.ssh/id_rsa api.crt api.key admin.crt admin.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/school-deployment
           rm api.crt api.key admin.crt admin.key
-          
+
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
 
@@ -107,7 +112,6 @@ jobs:
           EOF
 
       - name: Kubernetes - Delete config map
-        continue-on-error: true
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} || echo "postgres-env-config already exists or failed!"
@@ -117,7 +121,6 @@ jobs:
           EOF
 
       - name: Kubernetes - Create config map
-        continue-on-error: true
         run: |
           echo "$POSTGRES_ENV" > postgres.env
           echo "$REDIS_ENV" > redis.env
@@ -159,7 +162,11 @@ jobs:
           EOF
 
       - name: Kubernetes - Apply ingress
-        run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment && make k-apply-ingress-staging && exit"
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
+            make k-apply-ingress-staging
+          EOF
 
       - name: Cleanup ENV
         run: unset API_TLS_CERT && unset API_TLS_KEY && unset ADMIN_TLS_CERT && unset ADMIN_TLS_KEY && unset CLIENT_TLS_KEY && unset CLIENT_TLS_CERT && unset NAMESPACE
