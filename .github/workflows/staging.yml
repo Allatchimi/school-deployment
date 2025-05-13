@@ -168,8 +168,5 @@ jobs:
             make k-apply-ingress-staging
           EOF
 
-      - name: Cleanup ENV
-        run: unset API_TLS_CERT && unset API_TLS_KEY && unset ADMIN_TLS_CERT && unset ADMIN_TLS_KEY && unset CLIENT_TLS_KEY && unset CLIENT_TLS_CERT && unset NAMESPACE
-
       - name: Cleanup SSH dir
         run: rm -rf ~/.ssh
