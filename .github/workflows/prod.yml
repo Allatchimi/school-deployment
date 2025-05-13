@@ -22,9 +22,7 @@ jobs:
       NAMESPACE: "school-prod"
     environment:
       name: "Production"
-      url: |
-        https://api.school.emfi.cm
-        https://admin.school.emfi.cm
+      url: https://admin.school.emfi.cm
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7

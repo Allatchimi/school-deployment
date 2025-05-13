@@ -22,9 +22,7 @@ jobs:
       NAMESPACE: "school-staging"
     environment:
       name: "Staging"
-      url: |
-        https://staging.api.school.emfi.cm
-        https://staging.admin.school.emfi.cm
+      url: https://staging.admin.school.emfi.cm
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
