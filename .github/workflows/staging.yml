@@ -159,6 +159,7 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
+            
             kubectl apply -f ./kubernetes/services/redis.yml --namespace ${{ env.NAMESPACE }}
             kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }}
             kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }}
