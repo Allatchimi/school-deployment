@@ -14,26 +14,26 @@ spec:
         app: admin
     spec:
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
       containers:
-      - name: admin
-        image: "ghcr.io/emenec-finance/school-admin/school-admin:2"
-        ports:
-        - containerPort: 3000
-        envFrom:
-          - secretRef:
+        - name: admin
+          image: "ghcr.io/emenec-finance/school-admin/school-admin:2"
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
                 name: admin-env-secret
-        resources:
-          limits:
-            cpu: "250m"
-            memory: "512Mi"
-          requests:
-            cpu: "100m"
-            memory: "256Mi"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /app
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          resources:
+            limits:
+              cpu: "250m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+          livenessProbe:
+            exec:
+              command:
+                - ls
+                - /app
+            initialDelaySeconds: 5
+            periodSeconds: 5
