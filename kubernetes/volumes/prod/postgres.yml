@@ -7,7 +7,7 @@ spec:
   volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
   accessModes:
-    - ReadWriteOnce
+    - ReadOnlyMany
   capacity:
       storage: 200Gi
   local:
@@ -31,7 +31,7 @@ spec:
   volumeName: emfi-school-postgres-prod
   storageClassName: standard
   accessModes:
-    - ReadWriteOnce
+    - ReadOnlyMany
   resources:
     requests:
       storage: 100Gi
