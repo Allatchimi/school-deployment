@@ -14,7 +14,7 @@ spec:
         app: redis
     spec:
       volumes:
-        - name: redis-volume
+        - name: redis-data-volume
           persistentVolumeClaim:
             claimName: redis
       containers:
@@ -26,7 +26,7 @@ spec:
             - configMapRef:
                 name: redis-env-config
           volumeMounts:
-            - name: redis-volume
+            - name: redis-data-volume
               mountPath: /data
           resources:
             limits:
