@@ -28,7 +28,7 @@ spec:
             - configMapRef:
                 name: postgres-env-config
           volumeMounts:
-            - name: postgres
+            - name: postgres-data-volume
               mountPath: /var/lib/postgresql/data
           resources:
             limits:
