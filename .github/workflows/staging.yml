@@ -163,6 +163,14 @@ jobs:
             kubectl apply -f ./kubernetes/services/admin.yml --namespace ${{ env.NAMESPACE }}
           EOF
 
+      - name: Kubernetes - Apply middlewares
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
+            set -e
+            kubectl apply -f ./kubernetes/middlewares/sslredirect.yml
+          EOF
+
       - name: Kubernetes - Apply ingress
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
