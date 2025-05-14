@@ -114,15 +114,20 @@
 Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/school-deployment/settings/secrets/actions)
 
 - ------------- On your GitHub Action Secrets page -------------
+    
     - Ser Secret `SSH_HOST` with the value of your server domain name. E.g: `emfi.cm`
+    
     - Set Secret `SSH_PRIVATE_KEY` with value from your personal computer `~/.ssh/id_rsa`. You'll need to remove the passphrase. You can use this command to show the file content: 
         ```
         cat ~/.ssh/id_rsa
         ```
     - Set Secret `SSH_USER` with value `github`
-    - Set Secrets `PROD_API_TLS_CERT`, `PROD_API_TLS_KEY`, `STAGING_API_TLS_CERT`, `STAGING_API_TLS_KEY` with your certificates values for production(starts with PROD_) and staging(starts with STAGING_)
-    - Set Secrets `PROD_ADMIN_TLS_CERT`, `PROD_ADMIN_TLS_KEY`, `STAGING_ADMIN_TLS_CERT`, `STAGING_ADMIN_TLS_KEY` with your certificates values for production(starts with PROD_) and staging(starts with STAGING_)
+
+    - Set Secrets `GHCR_EMAIL` `GHCR_PASSWORD` `GHCR_USERNAME` with value your GitHub credentials. `GHCR_PASSWORD` is your GitHub personal access token with `read package` permission enabled
+    
     - Set Secret `PROD_WORK_DIR` with value `~/emfi/school/deployment/api-admin/prod`
+    
     - Set Secret `STAGING_WORK_DIR` with value `~/emfi/school/deployment/api-admin/staging`
-    - Set Secrets `GHCR_EMAIL` `GHCR_PASSWORD` `GHCR_USERNAME` with value your GitHub credentials. `GHCR_PASSWORD` is your personal access token with `read package` permission enabled
+    
+    - For others secrets, update values
     
