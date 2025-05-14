@@ -99,16 +99,13 @@ jobs:
               --namespace=${{ env.NAMESPACE }} \
               --type=kubernetes.io/tls \
               --from-file=tls.crt=api.crt \
-              --from-file=tls.key=api.key || echo "api-tls-secret already exists or failed!"
-
+              --from-file=tls.key=api.key
             rm -f api.crt api.key
-
             kubectl create secret generic admin-tls-secret \
               --namespace=${{ env.NAMESPACE }} \
               --type=kubernetes.io/tls \
               --from-file=tls.crt=admin.crt \
-              --from-file=tls.key=admin.key || echo "admin-tls-secret already exists or failed!"
-
+              --from-file=tls.key=admin.key
             rm -f admin.crt admin.key
           EOF
 
@@ -135,13 +132,13 @@ jobs:
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             cd ${{ secrets.PROD_WORK_DIR }}/school-deployment
             set -e
-            kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} || echo "postgres-env-config already exists or failed!"
-            kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} || echo "redis-env-config already exists or failed!"
-            kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} || echo "api-env-config already exists or failed!"
+            kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }}
+            kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }}
+            kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }}
             kubectl create configmap api-jwt-config \
               --from-file=private.pem \
               --from-file=public.pem \
-              --namespace ${{ env.NAMESPACE }} || echo "api-jwt-config already exists or failed!"
+              --namespace ${{ env.NAMESPACE }}
           EOF
 
       - name: Kubernetes - Apply deployments
