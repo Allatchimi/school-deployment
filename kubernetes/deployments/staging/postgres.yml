@@ -13,8 +13,10 @@ spec:
       labels:
         app: postgres
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: emfi
       volumes:
-        - name: postgres-volume
+        - name: postgres-data-volume
           persistentVolumeClaim:
             claimName: postgres
       containers:
@@ -26,7 +28,7 @@ spec:
             - configMapRef:
                 name: postgres-env-config
           volumeMounts:
-            - name: postgres-volume
+            - name: postgres
               mountPath: /var/lib/postgresql/data
           resources:
             limits:
@@ -35,3 +37,13 @@ spec:
             requests:
               cpu: "500m"
               memory: "512Mi"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
