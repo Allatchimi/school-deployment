@@ -52,10 +52,3 @@ spec:
             requests:
               cpu: "100m"
               memory: "128Mi"
-          livenessProbe:
-            exec:
-              command:
-                - ls
-                - /app
-            initialDelaySeconds: 5
-            periodSeconds: 5

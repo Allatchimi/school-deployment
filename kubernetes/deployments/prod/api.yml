@@ -14,23 +14,41 @@ spec:
         app: api
     spec:
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
+      volumes:
+        - name: api-env-volume
+          configMap:
+            name: api-env-config
+            items:
+              - key: app.env
+                path: app.env
+        - name: api-jwt-volume
+          configMap:
+            name: api-jwt-config
+            items:
+              - key: private.pem
+                path: private.pem
+              - key: public.pem
+                path: public.pem
       containers:
-      - name: api
-        image: "ghcr.io/emenec-finance/school-api/school-api:9"
-        ports:
-        - containerPort: 3100
-        resources:
-          limits:
-            cpu: "750m"
-            memory: "1Gi"
-          requests:
-            cpu: "250m"
-            memory: "512Mi"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /app
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: api
+          image: "ghcr.io/emenec-finance/school-api/school-api:13"
+          ports:
+            - containerPort: 3100
+          volumeMounts:
+            - name: api-env-volume
+              mountPath: /app/app.env
+              subPath: app.env
+            - name: api-jwt-volume
+              mountPath: /app/assets/private/keys/jwt/private.pem
+              subPath: private.pem
+            - name: api-jwt-volume
+              mountPath: /app/assets/private/keys/jwt/public.pem
+              subPath: public.pem
+          resources:
+            limits:
+              cpu: "750m"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "512Mi"

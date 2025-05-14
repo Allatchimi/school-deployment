@@ -48,13 +48,11 @@ k-apply-deploy-postgres-staging:
 k-apply-deploy-postgres-prod:
 	@kubectl apply -f ./kubernetes/deployments/prod/postgres.yml
 
-
 .PHONY: k-apply-deploy-api-staging k-apply-deploy-api-prod
 k-apply-deploy-api-staging:
 	@kubectl apply -f ./kubernetes/deployments/staging/api.yml
 k-apply-deploy-api-prod:
 	@kubectl apply -f ./kubernetes/deployments/prod/api.yml
-
 
 .PHONY: k-apply-deploy-client-staging k-apply-deploy-client-prod
 k-apply-deploy-client-staging:

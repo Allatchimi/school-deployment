@@ -94,7 +94,7 @@ jobs:
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
-
+            set -e
             kubectl create secret generic api-tls-secret \
               --namespace=${{ env.NAMESPACE }} \
               --type=kubernetes.io/tls \
@@ -134,7 +134,7 @@ jobs:
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
-
+            set -e
             kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} || echo "postgres-env-config already exists or failed!"
             kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} || echo "redis-env-config already exists or failed!"
             kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} || echo "api-env-config already exists or failed!"
@@ -148,7 +148,7 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
-
+            set -e
             make k-apply-deploy-redis-staging
             make k-apply-deploy-postgres-staging
             make k-apply-deploy-api-staging
@@ -159,7 +159,7 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
             cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
-            
+            set -e
             kubectl apply -f ./kubernetes/services/redis.yml --namespace ${{ env.NAMESPACE }}
             kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }}
             kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }}
