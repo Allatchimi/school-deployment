@@ -13,8 +13,6 @@ spec:
       labels:
         app: postgres
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: emfi
       volumes:
         - name: postgres-data-volume
           persistentVolumeClaim:

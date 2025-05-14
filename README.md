@@ -95,14 +95,10 @@
 
 5. Create persistent volume folders for kubernetes
     ```
-    sudo mkdir -p /mnt/emfi/school/api/data/staging
-    sudo mkdir -p /mnt/emfi/school/api/data/prod
-    sudo mkdir -p /mnt/emfi/school/admin/data/staging
-    sudo mkdir -p /mnt/emfi/school/admin/data/prod
-    sudo mkdir -p /mnt/emfi/school/redis/data/staging
-    sudo mkdir -p /mnt/emfi/school/redis/data/prod
-    sudo mkdir -p /mnt/emfi/school/postgres/data/staging
-    sudo mkdir -p /mnt/emfi/school/postgres/data/prod
+    sudo mkdir -p /mnt/emfi/school/api/data
+    sudo mkdir -p /mnt/emfi/school/admin/data
+    sudo mkdir -p /mnt/emfi/school/redis/data
+    sudo mkdir -p /mnt/emfi/school/postgres/data
 
     sudo chown -R root:k3s /mnt/emfi
     sudo chmod -R 775 /mnt/emfi
