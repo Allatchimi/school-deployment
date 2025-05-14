@@ -129,3 +129,5 @@ Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/schoo
     
     - Set Secret `STAGING_WORK_DIR` with value `~/emfi/school/deployment/api-admin/staging`
     
+    - For others secrets, update values
+    
