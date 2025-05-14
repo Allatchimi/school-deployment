@@ -13,8 +13,6 @@ spec:
       labels:
         app: redis
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: emfi
       volumes:
         - name: redis-data-volume
           persistentVolumeClaim:
