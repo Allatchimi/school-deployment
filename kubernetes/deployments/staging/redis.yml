@@ -4,7 +4,7 @@ metadata:
   name: redis
   namespace: school-staging
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: redis
@@ -13,8 +13,6 @@ spec:
       labels:
         app: redis
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       volumes:
         - name: redis-volume
           persistentVolumeClaim:
@@ -26,7 +24,7 @@ spec:
             - containerPort: 6379
           envFrom:
             - configMapRef:
-              name: redis-env-config
+                name: redis-env-config
           volumeMounts:
             - name: redis-volume
               mountPath: /data
@@ -37,10 +35,3 @@ spec:
             requests:
               cpu: "250m"
               memory: "256Mi"
-          livenessProbe:
-            exec:
-              command:
-                - ls
-                - /data
-            initialDelaySeconds: 5
-            periodSeconds: 5

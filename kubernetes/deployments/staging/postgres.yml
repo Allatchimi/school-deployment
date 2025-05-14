@@ -4,7 +4,7 @@ metadata:
   name: postgres
   namespace: school-staging
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: postgres
@@ -13,8 +13,6 @@ spec:
       labels:
         app: postgres
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       volumes:
         - name: postgres-volume
           persistentVolumeClaim:
@@ -26,7 +24,7 @@ spec:
             - containerPort: 5432
           envFrom:
             - configMapRef:
-              name: postgres-env-config
+                name: postgres-env-config
           volumeMounts:
             - name: postgres-volume
               mountPath: /var/lib/postgresql/data
@@ -37,10 +35,3 @@ spec:
             requests:
               cpu: "500m"
               memory: "512Mi"
-          livenessProbe:
-            exec:
-              command:
-                - ls
-                - /var/lib/postgresql/data
-            initialDelaySeconds: 5
-            periodSeconds: 5

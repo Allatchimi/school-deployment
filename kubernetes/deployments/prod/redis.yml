@@ -13,22 +13,20 @@ spec:
       labels:
         app: redis
     spec:
-      imagePullSecrets:
-      - name: ghcr-secret
       volumes:
-      - name: redis-data
+      - name: redis-volume
         persistentVolumeClaim:
           claimName: redis
       containers:
       - name: redis
-        image: "redis:7.4.0-alpine"
+        image: "redis:7"
         ports:
         - containerPort: 6379
         envFrom:
           - configMapRef:
-            name: redis-env-config
+              name: redis-env-config
         volumeMounts:
-        - name: redis-data
+        - name: redis-volume
           mountPath: /data
         resources:
           limits:
@@ -37,10 +35,3 @@ spec:
           requests:
             cpu: "1"
             memory: "2Gi"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /data
-          initialDelaySeconds: 5
-          periodSeconds: 5
