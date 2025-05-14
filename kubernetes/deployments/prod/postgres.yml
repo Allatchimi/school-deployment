@@ -4,7 +4,7 @@ metadata:
   name: postgres
   namespace: school-prod
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: postgres
@@ -14,24 +14,24 @@ spec:
         app: postgres
     spec:
       volumes:
-      - name: postgres-volume
-        persistentVolumeClaim:
-          claimName: postgres
-      containers:
-      - name: postgres
-        image: "postgres:16-alpine"
-        ports:
-        - containerPort: 5432
-        envFrom:
-          - configMapRef:
-              name: postgres-env-config
-        volumeMounts:
         - name: postgres-volume
-          mountPath: /var/lib/postgresql/data
-        resources:
-          limits:
-            cpu: "6"
-            memory: "16Gi"
-          requests:
-            cpu: "3"
-            memory: "8Gi"
+          persistentVolumeClaim:
+            claimName: postgres
+      containers:
+        - name: postgres
+          image: "postgres:16-alpine"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-env-config
+          volumeMounts:
+            - name: postgres-volume
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              cpu: "6"
+              memory: "16Gi"
+            requests:
+              cpu: "3"
+              memory: "8Gi"
