@@ -4,7 +4,7 @@ metadata:
   name: postgres
   namespace: school-staging
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: postgres
@@ -38,10 +38,10 @@ spec:
           livenessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
-            initialDelaySeconds: 30
+            initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
-            initialDelaySeconds: 30
+            initialDelaySeconds: 5
             periodSeconds: 10
