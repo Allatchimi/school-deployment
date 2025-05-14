@@ -4,7 +4,7 @@ metadata:
   name: postgres
   namespace: school-staging
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: postgres
@@ -19,7 +19,7 @@ spec:
             claimName: postgres
       containers:
         - name: postgres
-          image: "postgres:16-alpine"
+          image: "postgres:16"
           ports:
             - containerPort: 5432
           envFrom:
