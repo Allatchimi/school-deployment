@@ -32,7 +32,7 @@ spec:
                 path: public.pem
       containers:
         - name: api
-          image: "ghcr.io/emenec-finance/school-api/school-api:15"
+          image: "ghcr.io/emenec-finance/school-api/school-api:16"
           ports:
             - containerPort: 3100
           volumeMounts:
