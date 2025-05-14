@@ -7,7 +7,7 @@ spec:
   volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
   accessModes:
-    - ReadOnlyMany
+    - ReadWriteOnce
   capacity:
       storage: 10Gi
   local:
@@ -31,7 +31,7 @@ spec:
   volumeName: emfi-school-redis-prod
   storageClassName: standard
   accessModes:
-    - ReadOnlyMany
+    - ReadWriteOnce
   resources:
     requests:
       storage: 4Gi
