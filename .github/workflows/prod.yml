@@ -132,13 +132,13 @@ jobs:
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             cd ${{ secrets.PROD_WORK_DIR }}/school-deployment
             set -e
-            kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }}"
-            kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }}"
-            kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }}"
+            kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }}
+            kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }}
+            kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }}
             kubectl create configmap api-jwt-config \
               --from-file=private.pem \
               --from-file=public.pem \
-              --namespace ${{ env.NAMESPACE }}"
+              --namespace ${{ env.NAMESPACE }}
           EOF
 
       - name: Kubernetes - Apply deployments
