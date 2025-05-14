@@ -4,7 +4,7 @@ metadata:
   name: api
   namespace: school-prod
 spec:
-  replicas: 4
+  replicas: 2
   selector:
     matchLabels:
       app: api

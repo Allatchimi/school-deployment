@@ -99,6 +99,10 @@
     sudo mkdir -p /mnt/emfi/school/api/data/prod
     sudo mkdir -p /mnt/emfi/school/admin/data/staging
     sudo mkdir -p /mnt/emfi/school/admin/data/prod
+    sudo mkdir -p /mnt/emfi/school/redis/data/staging
+    sudo mkdir -p /mnt/emfi/school/redis/data/prod
+    sudo mkdir -p /mnt/emfi/school/postgres/data/staging
+    sudo mkdir -p /mnt/emfi/school/postgres/data/prod
 
     sudo chown -R root:k3s /mnt/emfi
     sudo chmod -R 775 /mnt/emfi
