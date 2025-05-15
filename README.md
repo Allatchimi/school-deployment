@@ -117,7 +117,7 @@ Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/schoo
     
     - Ser Secret `SSH_HOST` with the value of your server domain name. E.g: `emfi.cm`
     
-    - Set Secret `SSH_PRIVATE_KEY` with value from your personal computer `~/.ssh/id_rsa`. You'll need to remove the passphrase. You can use this command to show the file content: 
+    - Set Secret `SSH_KEY` with value from your personal computer `~/.ssh/id_rsa`. You'll need to remove the passphrase. You can use this command to show the file content: 
         ```
         cat ~/.ssh/id_rsa
         ```
