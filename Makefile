@@ -1,10 +1,10 @@
-.PHONY: k-create-namespaces k-set-namespace-staging k-set-namespace-prod
+.PHONY: k-create-namespaces
 k-create-namespaces:
 	@echo ""; \
 	echo "----- Creating namespaces namespace -----"; \
 	kubectl create -f ./kubernetes/namespaces.yml
 
-.PHONY: k-apply-volume-staging k-apply-volume-prod k-delete-volumes
+.PHONY: k-apply-volume-staging k-apply-volume-prod
 k-apply-volume-staging:
 	@kubectl apply -f ./kubernetes/volumes/staging/redis.yml
 	@kubectl apply -f ./kubernetes/volumes/staging/postgres.yml
