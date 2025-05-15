@@ -106,6 +106,9 @@
 
     sudo chown -R root:k3s /mnt/emfi
     sudo chmod -R 775 /mnt/emfi
+
+    sudo chown -R root:k3s ~/emfi
+    sudo chmod -R 775 ~/emfi
     ```
 
 
