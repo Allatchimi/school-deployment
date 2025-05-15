@@ -17,7 +17,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: admin
-          image: "ghcr.io/emenec-finance/school-admin/school-admin:31"
+          image: "ghcr.io/emenec-finance/school-admin/school-admin:32"
           ports:
             - containerPort: 3000
           envFrom:
