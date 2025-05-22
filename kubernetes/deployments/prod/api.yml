@@ -32,7 +32,7 @@ spec:
                 path: public.pem
       containers:
         - name: api
-          image: "ghcr.io/emenec-finance/school-api/school-api:18"
+          image: "ghcr.io/emenec-finance/school-api/school-api:20"
           ports:
             - containerPort: 3100
           volumeMounts:
@@ -52,3 +52,21 @@ spec:
             requests:
               cpu: "250m"
               memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/healthz/live
+              port: 3100
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /api/v1/healthz/dependencies
+              port: 3100
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
