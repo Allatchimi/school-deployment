@@ -17,7 +17,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: admin
-          image: "ghcr.io/emenec-finance/school-admin/school-admin:32"
+          image: "ghcr.io/emenec-finance/school-admin/school-admin:36"
           ports:
             - containerPort: 3000
           envFrom:
@@ -30,3 +30,21 @@ spec:
             requests:
               cpu: "100m"
               memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: api/healthz/live
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: api/healthz/live
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
