@@ -4,7 +4,7 @@ metadata:
   name: admin
   namespace: school-staging
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: admin
@@ -17,12 +17,9 @@ spec:
         - name: ghcr-secret
       containers:
         - name: admin
-          image: "ghcr.io/emenec-finance/school-template/school-admin-staging:42"
+          image: "ghcr.io/emenec-finance/school-template/school-admin-staging:45"
           ports:
             - containerPort: 3000
-          envFrom:
-            - secretRef:
-                name: admin-env-secret
           resources:
             limits:
               cpu: "250m"

@@ -68,22 +68,12 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} || true
-            kubectl delete secret admin-env-secret --namespace ${{ env.NAMESPACE }} || true
             kubectl delete secret api-tls-secret --namespace ${{ env.NAMESPACE }} || true
             kubectl delete secret admin-tls-secret --namespace ${{ env.NAMESPACE }} || true
           EOF
 
       - name: Kubernetes - Create secrets
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            cd ${{ secrets.STAGING_WORK_DIR }}/school-deployment
-
-            kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} \
-            --docker-server=https://ghcr.io --docker-username=${{secrets.GHCR_USERNAME}} \
-            --docker-password=${{secrets.GHCR_PASSWORD}} --docker-email=${{secrets.GHCR_EMAIL}}
-            kubectl create secret generic admin-env-secret --namespace ${{ env.NAMESPACE }} --from-literal=APP_ENV="staging"
-          EOF
-
           echo "$API_TLS_CERT" > api.crt
           echo "$API_TLS_KEY" > api.key
           echo "$ADMIN_TLS_CERT" > admin.crt
