@@ -2,8 +2,9 @@ name: School Staging CI
 run-name: ${{ github.actor }} is deploying School to Staging
 on:
   push:
-    branches: [staging] # Branch name
-  workflow_dispatch: # Allows you to run this workflow manually from the Actions tab
+    branches: [staging]
+  workflow_dispatch:
+
 jobs:
   deploy-school-k3s:
     runs-on: ubuntu-latest
@@ -13,18 +14,13 @@ jobs:
       API_ENV: ${{ secrets.STAGING_API_ENV }}
       API_JWT_PRIVATE_KEY: ${{ secrets.STAGING_API_JWT_PRIVATE_KEY }}
       API_JWT_PUBLIC_KEY: ${{ secrets.STAGING_API_JWT_PUBLIC_KEY }}
-
       API_TLS_CERT: ${{ secrets.STAGING_API_TLS_CERT }}
       API_TLS_KEY: ${{ secrets.STAGING_API_TLS_KEY }}
       ADMIN_TLS_CERT: ${{ secrets.STAGING_ADMIN_TLS_CERT }}
       ADMIN_TLS_KEY: ${{ secrets.STAGING_ADMIN_TLS_KEY }}
-
       NAMESPACE: "school-staging"
-
       REPOSITORY_NAME: ${{ github.event.repository.name }}
-    environment:
-      name: "Staging"
-      url: https://staging.school.emfi.cm
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
@@ -42,11 +38,10 @@ jobs:
       - name: Remove old project files from server
         continue-on-error: true
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            mkdir -p ${{ secrets.STAGING_WORK_DIR }}
-            cd ${{ secrets.STAGING_WORK_DIR }}
-            rm -rf ${{ env.REPOSITORY_NAME }}
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          mkdir -p ${{ secrets.STAGING_WORK_DIR }} \
+          && cd ${{ secrets.STAGING_WORK_DIR }} \
+          && rm -rf ${{ env.REPOSITORY_NAME }}"
 
       - name: Copy the repository files to the server
         run: |
@@ -54,26 +49,23 @@ jobs:
 
       - name: Kubernetes - Create namespaces
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-            make k-create-namespaces || true
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} \
+          && make k-create-namespaces || true"
 
       - name: Kubernetes - Create PV and PVC
         continue-on-error: true
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-            make k-apply-volume-staging || true
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} \
+          && make k-apply-volume-staging || true"
 
       - name: Kubernetes - Delete secrets
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} || true
-            kubectl delete secret api-tls-secret --namespace ${{ env.NAMESPACE }} || true
-            kubectl delete secret admin-tls-secret --namespace ${{ env.NAMESPACE }} || true
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} || true \
+          && kubectl delete secret api-tls-secret --namespace ${{ env.NAMESPACE }} || true \
+          && kubectl delete secret admin-tls-secret --namespace ${{ env.NAMESPACE }} || true"
 
       - name: Kubernetes - Create secrets
         run: |
@@ -85,31 +77,23 @@ jobs:
           scp -P 22 -i ~/.ssh/id_rsa api.crt api.key admin.crt admin.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
           rm api.crt api.key admin.crt admin.key
 
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-            set -e
-            kubectl create secret generic api-tls-secret \
-              --namespace=${{ env.NAMESPACE }} \
-              --type=kubernetes.io/tls \
-              --from-file=tls.crt=api.crt \
-              --from-file=tls.key=api.key
-            rm -f api.crt api.key
-            kubectl create secret generic admin-tls-secret \
-              --namespace=${{ env.NAMESPACE }} \
-              --type=kubernetes.io/tls \
-              --from-file=tls.crt=admin.crt \
-              --from-file=tls.key=admin.key
-            rm -f admin.crt admin.key
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} \
+          && set -e \
+          && kubectl create secret generic api-tls-secret --namespace=${{ env.NAMESPACE }} \
+          --type=kubernetes.io/tls --from-file=tls.crt=api.crt --from-file=tls.key=api.key \
+          && rm -f api.crt api.key \
+          && kubectl create secret generic admin-tls-secret --namespace=${{ env.NAMESPACE }} \
+          --type=kubernetes.io/tls --from-file=tls.crt=admin.crt --from-file=tls.key=admin.key \
+          && rm -f admin.crt admin.key"
 
       - name: Kubernetes - Delete config map
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} || echo "postgres-env-config already exists or failed!"
-            kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} || echo "redis-env-config already exists or failed!"
-            kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} || echo "api-env-config  already exists or failed!"
-            kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} || echo "api-jwt-config already exists or failed!"
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} || echo 'postgres-env-config already exists or failed!' \
+          && kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} || echo 'redis-env-config already exists or failed!' \
+          && kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} || echo 'api-env-config already exists or failed!' \
+          && kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} || echo 'api-jwt-config already exists or failed!'"
 
       - name: Kubernetes - Create config map
         run: |
@@ -122,54 +106,46 @@ jobs:
           scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
           rm postgres.env redis.env app.env private.pem public.pem
 
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-            set -e
-            kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }}
-            kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }}
-            kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }}
-            kubectl create configmap api-jwt-config \
-              --from-file=private.pem \
-              --from-file=public.pem \
-              --namespace ${{ env.NAMESPACE }}
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} \
+          && set -e \
+          && kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} \
+          && kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} \
+          && kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} \
+          && kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }}"
 
       - name: Kubernetes - Apply deployments
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-            set -e
-            make k-apply-deploy-redis-staging
-            make k-apply-deploy-postgres-staging
-            make k-apply-deploy-api-staging
-            make k-apply-deploy-admin-staging
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} \
+          && set -e \
+          && make k-apply-deploy-redis-staging \
+          && make k-apply-deploy-postgres-staging \
+          && make k-apply-deploy-api-staging \
+          && make k-apply-deploy-admin-staging"
 
       - name: Kubernetes - Apply services
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-            set -e
-            kubectl apply -f ./kubernetes/services/redis.yml --namespace ${{ env.NAMESPACE }}
-            kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }}
-            kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }}
-            kubectl apply -f ./kubernetes/services/admin.yml --namespace ${{ env.NAMESPACE }}
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} \
+          && set -e \
+          && kubectl apply -f ./kubernetes/services/redis.yml --namespace ${{ env.NAMESPACE }} \
+          && kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }} \
+          && kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }} \
+          && kubectl apply -f ./kubernetes/services/admin.yml --namespace ${{ env.NAMESPACE }}"
 
       - name: Kubernetes - Apply middlewares
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-            set -e
-            kubectl apply -f ./kubernetes/middlewares/sslredirect.yml
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} \
+          && set -e \
+          && kubectl apply -f ./kubernetes/middlewares/sslredirect.yml"
 
       - name: Kubernetes - Apply ingress
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-            cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-            make k-apply-ingress-staging
-          EOF
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} \
+          && make k-apply-ingress-staging"
 
       - name: Cleanup SSH dir
         run: rm -rf ~/.ssh
