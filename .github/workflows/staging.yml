@@ -2,7 +2,7 @@ name: School Staging CI
 run-name: ${{ github.actor }} is deploying School to Staging
 on:
   push:
-    branches: [main]
+    branches: [staging]
   workflow_dispatch:
 
 jobs:
