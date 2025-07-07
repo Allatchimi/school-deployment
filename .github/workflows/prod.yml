@@ -78,13 +78,10 @@ jobs:
           rm api.crt api.key admin.crt admin.key
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.PROD_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
-          set -e && \
-          kubectl create secret generic api-tls-secret --namespace=${{ env.NAMESPACE }} \
-          --type=kubernetes.io/tls --from-file=tls.crt=api.crt --from-file=tls.key=api.key && \ 
-          rm -f api.crt api.key  && \
-          kubectl create secret generic admin-tls-secret --namespace=${{ env.NAMESPACE }} \
-          --type=kubernetes.io/tls --from-file=tls.crt=admin.crt --from-file=tls.key=admin.key && \
+          cd ${{ secrets.PROD_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && set -e && \
+          kubectl create secret generic api-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=api.crt --from-file=tls.key=api.key && \
+          rm -f api.crt api.key && \
+          kubectl create secret generic admin-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=admin.crt --from-file=tls.key=admin.key && \
           rm -f admin.crt admin.key"
 
       - name: Kubernetes - Delete config map
@@ -107,8 +104,7 @@ jobs:
           rm postgres.env redis.env app.env private.pem public.pem
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.PROD_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
-          set -e && \
+          cd ${{ secrets.PROD_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && set -e && \
           kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
@@ -137,7 +133,7 @@ jobs:
       - name: Kubernetes - Apply middlewares
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.PROD_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
+          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
           set -e && \
           kubectl apply -f ./kubernetes/middlewares/sslredirect.yml"
 
