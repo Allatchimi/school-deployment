@@ -1,136 +1,94 @@
-# Step 1: VPS security and best practices
+# Step 1: Create specific application data folder
 
+1. Ceate persistent volumes directories data and set permissions
 
-1. Add new user account(GitHub for GitHub actions, and for your personal usage: prosper as example)
-    ```
-    adduser github
-    adduser prosper
-    usermod -aG sudo github
-    usermod -aG sudo prosper
-    ```
+- Create persistent volumes directories data for redis
 
-2. Add firewall rules: block all ports except 22(ssh), 80(http) and 443(https)
-    ```
-    sudo ufw default deny incoming
-    sudo ufw default allow outgoing
-    sudo ufw allow OpenSSH
-    sudo ufw allow 80
-    sudo ufw allow 443
-    ```
+```
+sudo mkdir -p /mnt/node/data/apps/emfi/school/redis/prod
+sudo mkdir -p /mnt/node/data/apps/emfi/school/redis/staging
+sudo mkdir -p /mnt/node/data/apps/emfi/school/redis/dev
+```
 
-    - Optional to show all rules
-        ```
-        sudo ufw show Added
-        ```
-    ```
-    sudo ufw enable
-    ```
-    - Optional to show firewall status
-        ```
-        sudo ufw status
-        ```
+- Create persistent volumes directories data for postgres
 
-3. Disable ssh login with password
+```
+sudo mkdir -p /mnt/node/data/apps/emfi/school/postgres/prod
+sudo mkdir -p /mnt/node/data/apps/emfi/school/postgres/staging
+sudo mkdir -p /mnt/node/data/apps/emfi/school/postgres/dev
+```
 
-    - ------------- On your personal computer(the one who will be used to login to the server via ssh) -------------
-      - Optional: to remove known host with same hostname
-        ```
-        ssh-keygen -R snip.cm
-        ```
-      ```
-	  ssh-copy-id -i ~/.ssh/id_rsa.pub github@snip.cm
-	  ssh-copy-id -i ~/.ssh/id_rsa.pub prosper@snip.cm
-      ```
-    
-    ```
-    sudo vim /etc/ssh/sshd_config
-    ```
-    - Change these values(on /etc/ssh/sshd_config file): `PubkeyAuthentication yes` `PasswordAuthentication no` `PermitRootLogin no` and save
-    ```
-    sudo systemctl restart ssh
-    ```
+2. Set persistent volumes users and permissions
 
-4. Pointing a DNS record at a server(let's get a domain name)
+- Set permissions for redis user
+  - prod: UID = 1001
+  - staging: UID = 1002
+  - dev: UID = 1003
 
+```
+sudo chown -R 1001:1001 /mnt/node/data/apps/emfi/school/redis/prod
+sudo chmod -R 770 /mnt/node/data/apps/emfi/school/redis/prod
+```
 
+```
+sudo chown -R 1002:1002 /mnt/node/data/apps/emfi/school/redis/staging
+sudo chmod -R 770 /mnt/node/data/apps/emfi/school/redis/staging
+```
 
+```
+sudo chown -R 1003:1003 /mnt/node/data/apps/emfi/school/redis/dev
+sudo chmod -R 770 /mnt/node/data/apps/emfi/school/redis/dev
+```
 
-# Step 2: Setup Packages, Kubernetes, SSH key for GitHub Action Secrets, HELM and Prometheus/grafana for monitoring
+- Set permissions for postgres user
 
+  - prod: UID = 1101
+  - staging: UID = 1102
+  - dev: UID = 1103
 
-1. Update and install packages
-    ```
-    sudo apt update
-    sudo apt upgrade
-    sudo apt install curl wget git make tmux vim -y
-    ```
+```
+sudo chown -R 1001:1001 /mnt/node/data/apps/emfi/school/postgres/prod
+sudo chmod -R 770 /mnt/node/data/apps/emfi/school/postgres/prod
+```
 
-2. Generate ssh keys(for every user including root)
-    ```
-    ssh-keygen -t rsa -b 4096
-    ```
+```
+sudo chown -R 1002:1002 /mnt/node/data/apps/emfi/school/postgres/staging
+sudo chmod -R 770 /mnt/node/data/apps/emfi/school/postgres/staging
+```
 
-3. Install k3s
-    ```
-    curl -sfL https://get.k3s.io | sh -
-    ```
-    - Optional: start the service on boot
-        ```
-        sudo systemctl enable k3s
-        ```
+```
+sudo chown -R 1003:1003 /mnt/node/data/apps/emfi/school/postgres/dev
+sudo chmod -R 770 /mnt/node/data/apps/emfi/school/postgres/dev
+```
 
-4. Create k3s group and add user to avoid using always sudo(for every user except root)
-    ```
-    sudo groupadd k3s
-    sudo usermod -aG k3s github
-    sudo usermod -aG k3s prosper
-    sudo chown -R root:k3s /etc/rancher/k3s
-    sudo chmod -R 644 /etc/rancher/k3s
-    sudo chmod ug+x /etc/rancher/k3s
-    ```
-    ```
-    echo K3S_KUBECONFIG_MODE=\"644\" >> /etc/systemd/system/k3s.service.env
-    ```
-    - Restart the server
-
-5. Create persistent volume folders for kubernetes
-    ```
-    sudo mkdir -p /mnt/emfi/school/api/data/staging
-    sudo mkdir -p /mnt/emfi/school/api/data/prod
-    sudo mkdir -p /mnt/emfi/school/admin/data/staging
-    sudo mkdir -p /mnt/emfi/school/admin/data/prod
-    sudo mkdir -p /mnt/emfi/school/redis/data/staging
-    sudo mkdir -p /mnt/emfi/school/redis/data/prod
-    sudo mkdir -p /mnt/emfi/school/postgres/data/staging
-    sudo mkdir -p /mnt/emfi/school/postgres/data/prod
-
-    sudo chown -R root:k3s /mnt/emfi
-    sudo chmod -R 775 /mnt/emfi
-
-    sudo chown -R root:k3s ~/emfi
-    sudo chmod -R 775 ~/emfi
-    ```
-
-
-# Step 3: Update GitHub Action Secrets for continuous integration
+# Step 2: Update GitHub Action Secrets for continuous integration
 
 Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/school-deployment/settings/secrets/actions)
 
 - ------------- On your GitHub Action Secrets page -------------
-    
-    - Ser Secret `SSH_HOST` with the value of your server domain name. E.g: `emfi.cm`
-    
-    - Set Secret `SSH_KEY` with value from your personal computer `~/.ssh/id_rsa`. You'll need to remove the passphrase. You can use this command to show the file content: 
-        ```
-        cat ~/.ssh/id_rsa
-        ```
-    - Set Secret `SSH_USER` with value `github`
 
-    - Set Secrets `GHCR_EMAIL` `GHCR_PASSWORD` `GHCR_USERNAME` with value your GitHub credentials. `GHCR_PASSWORD` is your GitHub personal access token with `read package` permission enabled
-    
-    - Set Secret `PROD_WORK_DIR` with value `~/emfi/school/deployment/api-admin/prod`
-    
-    - Set Secret `STAGING_WORK_DIR` with value `~/emfi/school/deployment/api-admin/staging`
-    
-    - For others secrets, update values
-    
+  - Ser Secret `SSH_HOST` with the value of the server IP or domain name
+
+  - Set Secret `SSH_KEY`. SSH_KEY is the private key without the passphrase. You can use this command to show the file content:
+
+    ```
+    cat ~/.ssh/id_ed25519
+    ```
+
+    or
+
+    ```
+    cat ~/.ssh/id_rsa
+    ```
+
+  - Set Secret `SSH_USER` with default value `ci`
+
+  - Set Secrets `GHCR_EMAIL` `GHCR_PASSWORD` `GHCR_USERNAME` with value your GitHub credentials. `GHCR_PASSWORD` is your GitHub personal access token with `read package` permission enabled
+
+  - Set Secret `WORK_DIR_CI_PROD` with value `/mnt/node/data/ci/emfi/school/app/prod`
+
+  - Set Secret `WORK_DIR_CI_STAGING` with value `/mnt/node/data/ci/emfi/school/app/staging`
+
+  - Set Secret `WORK_DIR_CI_DEV` with value `/mnt/node/data/ci/emfi/school/app/dev`
+
+  - For others secrets, update values

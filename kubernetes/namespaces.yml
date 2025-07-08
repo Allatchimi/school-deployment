@@ -1,3 +1,12 @@
+# Development
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+    name: school-dev
+    labels:
+        name: school-dev
+
 # Staging
 ---
 kind: Namespace

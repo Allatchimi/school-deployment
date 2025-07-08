@@ -11,7 +11,7 @@ spec:
   capacity:
       storage: 10Gi
   local:
-    path: /mnt/emfi/school/redis/data/prod
+    path: /mnt/node/data/apps/emfi/school/redis/prod
   nodeAffinity:
     required:
       nodeSelectorTerms:

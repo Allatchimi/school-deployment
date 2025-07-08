@@ -13,13 +13,16 @@ spec:
       labels:
         app: redis
     spec:
+      securityContext:
+        runAsUser: 100 # Standard UID of Redis
+        fsGroup: 101 # Applies to the mounted volume
       volumes:
         - name: redis-data-volume
           persistentVolumeClaim:
             claimName: redis
       containers:
         - name: redis
-          image: "redis:7-alpine"
+          image: "redis:8-alpine"
           ports:
             - containerPort: 6379
           envFrom:
@@ -30,11 +33,11 @@ spec:
               mountPath: /data
           resources:
             limits:
-              cpu: "2"
-              memory: "4Gi"
+              cpu: "800m"
+              memory: "6144Mi"
             requests:
-              cpu: "1"
-              memory: "2Gi"
+              cpu: "500m"
+              memory: "4096Mi"
           livenessProbe:
             tcpSocket:
               port: 6379
