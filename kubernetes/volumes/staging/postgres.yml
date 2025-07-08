@@ -9,9 +9,9 @@ spec:
   accessModes:
     - ReadWriteOnce
   capacity:
-      storage: 2Gi
+      storage: 5Gi
   local:
-    path: /mnt/emfi/school/postgres/data/staging
+    path: /mnt/node/data/apps/emfi/school/postgres/staging
   nodeAffinity:
     required:
       nodeSelectorTerms:

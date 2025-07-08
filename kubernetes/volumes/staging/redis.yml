@@ -9,9 +9,9 @@ spec:
   accessModes:
     - ReadWriteOnce
   capacity:
-      storage: 1Gi
+      storage: 2Gi
   local:
-    path: /mnt/emfi/school/redis/data/staging
+    path: /mnt/node/data/apps/emfi/school/redis/staging
   nodeAffinity:
     required:
       nodeSelectorTerms:

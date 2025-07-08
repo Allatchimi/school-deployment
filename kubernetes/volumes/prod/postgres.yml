@@ -11,7 +11,7 @@ spec:
   capacity:
       storage: 200Gi
   local:
-    path: /mnt/emfi/school/postgres/data/prod
+    path: /mnt/node/data/apps/emfi/school/postgres/prod
   nodeAffinity:
     required:
       nodeSelectorTerms:

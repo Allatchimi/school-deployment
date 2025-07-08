@@ -9,15 +9,11 @@ jobs:
   deploy-school-k3s:
     runs-on: ubuntu-latest
     env:
-      POSTGRES_ENV: ${{ secrets.STAGING_POSTGRES_ENV }}
-      REDIS_ENV: ${{ secrets.STAGING_REDIS_ENV }}
-      API_ENV: ${{ secrets.STAGING_API_ENV }}
-      API_JWT_PRIVATE_KEY: ${{ secrets.STAGING_API_JWT_PRIVATE_KEY }}
-      API_JWT_PUBLIC_KEY: ${{ secrets.STAGING_API_JWT_PUBLIC_KEY }}
-      API_TLS_CERT: ${{ secrets.STAGING_API_TLS_CERT }}
-      API_TLS_KEY: ${{ secrets.STAGING_API_TLS_KEY }}
-      ADMIN_TLS_CERT: ${{ secrets.STAGING_ADMIN_TLS_CERT }}
-      ADMIN_TLS_KEY: ${{ secrets.STAGING_ADMIN_TLS_KEY }}
+      POSTGRES_ENV: ${{ secrets.POSTGRES_ENV_STAGING }}
+      REDIS_ENV: ${{ secrets.REDIS_ENV_STAGING }}
+      API_ENV: ${{ secrets.API_ENV_STAGING }}
+      API_JWT_PRIVATE_KEY: ${{ secrets.API_JWT_PRIVATE_KEY_STAGING }}
+      API_JWT_PUBLIC_KEY: ${{ secrets.API_JWT_PUBLIC_KEY_STAGING }}
       NAMESPACE: "school-staging"
       REPOSITORY_NAME: ${{ github.event.repository.name }}
 
@@ -31,58 +27,77 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/temp_key
+          chmod 600 ~/.ssh/temp_key
+          FIRST_LINE=$(head -n 1 ~/.ssh/temp_key)
+
+          if echo "$FIRST_LINE" | grep -q "RSA PRIVATE KEY"; then
+            mv ~/.ssh/temp_key ~/.ssh/id_rsa
+            echo "✅ Detected RSA key"
+          elif echo "$FIRST_LINE" | grep -q "OPENSSH PRIVATE KEY"; then
+            mv ~/.ssh/temp_key ~/.ssh/id_ed25519
+            echo "✅ Detected ED25519 or OpenSSH formatted key"
+          else
+            echo "❌ Unsupported or unknown key type"
+            exit 1
+          fi
+
+          if ssh-keygen -lf ~/.ssh/id_rsa 2>/dev/null; then
+              echo "✅ Valid RSA key detected."
+          elif ssh-keygen -lf ~/.ssh/id_ed25519 2>/dev/null; then
+              echo "✅ Valid ED25519 key detected."
+          else
+              echo "❌ Unable to read SSH key with ssh-keygen. Possible passphrase detected or invalid key."
+              exit 1
+          fi
+
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
       - name: Remove old project files from server
         continue-on-error: true
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          mkdir -p ${{ secrets.STAGING_WORK_DIR }} && \
-          cd ${{ secrets.STAGING_WORK_DIR }} && \
+          mkdir -p ${{ secrets.WORK_DIR_CI_STAGING }} && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }} && \
           rm -rf ${{ env.REPOSITORY_NAME }}"
 
       - name: Copy the repository files to the server
         run: |
-          scp -P 22 -i ~/.ssh/id_rsa -r ../${{ env.REPOSITORY_NAME }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}
+          scp -P 22 -i ~/.ssh/id_rsa -r ../${{ env.REPOSITORY_NAME }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_STAGING }}
+
+      - name: Kubernetes - Apply letsencrypt certificates
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
+          make k-apply-letsencrypt || true"
 
       - name: Kubernetes - Create namespaces
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
           make k-create-namespaces || true"
 
       - name: Kubernetes - Create PV and PVC
         continue-on-error: true
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
           make k-apply-volume-staging || true"
 
       - name: Kubernetes - Delete secrets
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} || true && \
-          kubectl delete secret api-tls-secret --namespace ${{ env.NAMESPACE }} || true && \
-          kubectl delete secret admin-tls-secret --namespace ${{ env.NAMESPACE }} || true"
+          kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} || true"
 
       - name: Kubernetes - Create secrets
         run: |
-          echo "$API_TLS_CERT" > api.crt
-          echo "$API_TLS_KEY" > api.key
-          echo "$ADMIN_TLS_CERT" > admin.crt
-          echo "$ADMIN_TLS_KEY" > admin.key
-
-          scp -P 22 -i ~/.ssh/id_rsa api.crt api.key admin.crt admin.key ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
-          rm api.crt api.key admin.crt admin.key
-
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && set -e && \
-          kubectl create secret generic api-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=api.crt --from-file=tls.key=api.key && \
-          rm -f api.crt api.key && \
-          kubectl create secret generic admin-tls-secret --namespace=${{ env.NAMESPACE }} --type=kubernetes.io/tls --from-file=tls.crt=admin.crt --from-file=tls.key=admin.key && \
-          rm -f admin.crt admin.key"
+          kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} \
+          --docker-server=https://ghcr.io \
+          --docker-username=${{secrets.GHCR_USERNAME}} \
+          --docker-password=${{secrets.GHCR_PASSWORD}} \
+          --docker-email=${{secrets.GHCR_EMAIL}}"
 
       - name: Kubernetes - Delete config map
         run: |
@@ -100,11 +115,11 @@ jobs:
           echo "$API_JWT_PRIVATE_KEY" > private.pem
           echo "$API_JWT_PUBLIC_KEY" > public.pem
 
-          scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }}
+          scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }}
           rm postgres.env redis.env app.env private.pem public.pem
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && set -e && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && set -e && \
           kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
@@ -113,7 +128,7 @@ jobs:
       - name: Kubernetes - Apply deployments
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
           set -e && \
           make k-apply-deploy-redis-staging && \
           make k-apply-deploy-postgres-staging && \
@@ -123,7 +138,7 @@ jobs:
       - name: Kubernetes - Apply services
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
           set -e && \
           kubectl apply -f ./kubernetes/services/redis.yml --namespace ${{ env.NAMESPACE }} && \
           kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }} && \
@@ -133,14 +148,14 @@ jobs:
       - name: Kubernetes - Apply middlewares
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
           set -e && \
           kubectl apply -f ./kubernetes/middlewares/sslredirect.yml"
 
       - name: Kubernetes - Apply ingress
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.STAGING_WORK_DIR }}/${{ env.REPOSITORY_NAME }} && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
           make k-apply-ingress-staging"
 
       - name: Cleanup SSH dir
