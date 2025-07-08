@@ -81,8 +81,6 @@ Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/schoo
 
   - Set Secret `SSH_USER` on the server. The default value is `ci`
 
-  - Set Secret `SSH_KEY_GITHUB`. SSH_KEY_GITHUB is the private key without the passphrase used to clone the template repository.
-
   - Set Secrets `GHCR_EMAIL` `GHCR_PASSWORD` `GHCR_USERNAME` with value your GitHub credentials. `GHCR_PASSWORD` is your GitHub personal access token with `read package` permission enabled
 
   - Set Secret `WORK_DIR_CI_PROD` with value `/mnt/node/data/ci/emfi/school/app/prod`
