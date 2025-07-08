@@ -69,7 +69,7 @@ Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/schoo
 
   - Ser Secret `SSH_HOST` with the value of the server IP or domain name
 
-  - Set Secret `SSH_KEY`. SSH_KEY is the private key without the passphrase. You can use this command to show the file content:
+  - Set Secret `SSH_KEY`. SSH_KEY is the private key without the passphrase used to login into the server. You can use this command to show the file content:
 
     ```
     cat ~/.ssh/id_ed25519
