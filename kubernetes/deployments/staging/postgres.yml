@@ -13,34 +13,38 @@ spec:
       labels:
         app: postgres
     spec:
-      imagePullSecrets:
-      - name: ghcr-secret
+      securityContext:
+        runAsUser: 999 # Standard UID of Postgres
+        fsGroup: 999 # Applies to the mounted volume
       volumes:
-      - name: postgres-staging
-        persistentVolumeClaim:
-          claimName: postgres-staging
+        - name: postgres-data-volume
+          persistentVolumeClaim:
+            claimName: postgres
       containers:
-      - name: postgres
-        image: "ghcr.io/emenec-finance/school/postgres:3"
-        ports:
-        - containerPort: 5432
-        envFrom:
-          - secretRef:
-              name: app-secret
-        volumeMounts:
-        - name: postgres-staging
-          mountPath: /var/lib/postgresql/data
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "500m"
-            memory: "512Mi"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /var/lib/postgresql/data
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: postgres
+          image: "postgres:17-alpine"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-env-config
+          volumeMounts:
+            - name: postgres-data-volume
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              cpu: "300m"
+              memory: "300Mi"
+            requests:
+              cpu: "200m"
+              memory: "400Mi"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 5
+            periodSeconds: 10

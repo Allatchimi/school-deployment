@@ -1,18 +1,17 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: postgres-prod
-  namespace: school-prod
+  name: emfi-school-postgres-prod
 spec:
   storageClassName: standard
   volumeMode: Filesystem
   persistentVolumeReclaimPolicy: Retain
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   capacity:
-      storage: 5Gi
+      storage: 200Gi
   local:
-    path: /mnt
+    path: /mnt/node/data/apps/emfi/school/postgres/prod
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -20,19 +19,19 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - vmi2139037.contaboserver.net # Cluster/node name
+          - emfi # Cluster/node name
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: postgres-prod
+  name: postgres
   namespace: school-prod
 spec:
-  volumeName: postgres-prod
+  volumeName: emfi-school-postgres-prod
   storageClassName: standard
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 5Gi
+      storage: 100Gi
