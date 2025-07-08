@@ -1,23 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: admin
-  namespace: school-dev
+  name: client
+  namespace: {{NAMESPACE}}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: admin
+      app: client
   template:
     metadata:
       labels:
-        app: admin
+        app: client
     spec:
       imagePullSecrets:
         - name: ghcr-secret
       containers:
-        - name: admin
-          image: "ghcr.io/emenec-finance/school-template/school-admin-dev:45"
+        - name: client
+          image: "ghcr.io/emenec-finance/school-client-deployments/school-client-{{ID}}-dev:{{TAG}}"
           ports:
             - containerPort: 3000
           resources:

@@ -2,15 +2,15 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress-school
-  namespace: school-prod
+  namespace: school-staging
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/use-regex: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "letsencrypt-fake"
 spec:
   rules:
-    - host: api.school.emfi.cm
+    - host: staging.api.school.emfi.cm
       http:
         paths:
           - path: /
@@ -20,7 +20,7 @@ spec:
                 name: api
                 port:
                   number: 3100
-    - host: school.emfi.cm
+    - host: staging.school.emfi.cm
       http:
         paths:
           - path: /
@@ -32,8 +32,8 @@ spec:
                   number: 3000
   tls:
     - hosts:
-        - api.school.emfi.cm
+        - staging.api.school.emfi.cm
       secretName: api-tls-secret
     - hosts:
-        - school.emfi.cm
+        - staging.school.emfi.cm
       secretName: admin-tls-secret

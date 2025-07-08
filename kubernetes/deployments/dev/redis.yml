@@ -13,34 +13,38 @@ spec:
       labels:
         app: redis
     spec:
-      imagePullSecrets:
-      - name: ghcr-secret
+      securityContext:
+        runAsUser: 100 # Standard UID of Redis
+        fsGroup: 101 # Applies to the mounted volume
       volumes:
-      - name: redis-dev
-        persistentVolumeClaim:
-          claimName: redis-dev
+        - name: redis-data-volume
+          persistentVolumeClaim:
+            claimName: redis
       containers:
-      - name: redis
-        image: "ghcr.io/emenec-finance/school/redis:3"
-        ports:
-        - containerPort: 6379
-        envFrom:
-          - secretRef:
-              name: app-secret
-        volumeMounts:
-        - name: redis-dev
-          mountPath: /data
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "500m"
-            memory: "512Mi"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /data
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: redis
+          image: "redis:8-alpine"
+          ports:
+            - containerPort: 6379
+          envFrom:
+            - configMapRef:
+                name: redis-env-config
+          volumeMounts:
+            - name: redis-data-volume
+              mountPath: /data
+          resources:
+            limits:
+              cpu: "50m"
+              memory: "64Mi"
+            requests:
+              cpu: "20m"
+              memory: "32Mi"
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 5
+            periodSeconds: 10

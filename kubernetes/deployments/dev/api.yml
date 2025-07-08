@@ -14,26 +14,59 @@ spec:
         app: api
     spec:
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
+      volumes:
+        - name: api-env-volume
+          configMap:
+            name: api-env-config
+            items:
+              - key: app.env
+                path: app.env
+        - name: api-jwt-volume
+          configMap:
+            name: api-jwt-config
+            items:
+              - key: private.pem
+                path: private.pem
+              - key: public.pem
+                path: public.pem
       containers:
-      - name: api
-        image: "ghcr.io/emenec-finance/school/api:3"
-        ports:
-        - containerPort: 3100
-        envFrom:
-          - secretRef:
-              name: app-secret
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "500m"
-            memory: "512Mi"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /app
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: api
+          image: "ghcr.io/emenec-finance/school-api/school-api:21"
+          ports:
+            - containerPort: 3100
+          volumeMounts:
+            - name: api-env-volume
+              mountPath: /app/app.env
+              subPath: app.env
+            - name: api-jwt-volume
+              mountPath: /app/assets/private/keys/jwt/private.pem
+              subPath: private.pem
+            - name: api-jwt-volume
+              mountPath: /app/assets/private/keys/jwt/public.pem
+              subPath: public.pem
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/healthz/live
+              port: 3100
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: /api/v1/healthz/dependencies
+              port: 3100
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1

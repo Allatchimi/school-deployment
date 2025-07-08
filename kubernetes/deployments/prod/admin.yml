@@ -4,7 +4,7 @@ metadata:
   name: admin
   namespace: school-prod
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: admin
@@ -14,26 +14,34 @@ spec:
         app: admin
     spec:
       imagePullSecrets:
-      - name: ghcr-secret
+        - name: ghcr-secret
       containers:
-      - name: admin
-        image: "ghcr.io/emenec-finance/school/admin:3"
-        ports:
-        - containerPort: 3000
-        envFrom:
-          - secretRef:
-                name: app-secret
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "250m"
-            memory: "256Mi"
-        livenessProbe:
-          exec:
-            command:
-            - ls
-            - /app
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: admin
+          image: "ghcr.io/emenec-finance/school-template/school-admin:46"
+          ports:
+            - containerPort: 3000
+          resources:
+            limits:
+              cpu: "150m"
+              memory: "256Mi"
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+          livenessProbe:
+            httpGet:
+              path: api/healthz/live
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+              path: api/healthz/live
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 2
+            failureThreshold: 3
+            successThreshold: 1

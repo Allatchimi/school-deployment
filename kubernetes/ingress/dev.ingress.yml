@@ -7,47 +7,33 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/use-regex: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-fake"
 spec:
   rules:
-  - host: dev.api.school.emfi.cm
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: api
-            port:
-              number: 3100
-
-  - host: dev.admin.school.emfi.cm
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: admin
-            port:
-              number: 3000
-
-  - host: dev.cdn.school.emfi.cm
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: cdn
-            port:
-              number: 4100
+    - host: dev.api.school.emfi.cm
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3100
+    - host: dev.school.emfi.cm
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: admin
+                port:
+                  number: 3000
   tls:
-  - hosts:
-    - dev.api.school.emfi.cm
-    secretName: api-tls-secret
-  - hosts:
-    - dev.admin.school.emfi.cm
-    secretName: admin-tls-secret
-  - hosts:
-    - dev.cdn.school.emfi.cm
-    secretName: cdn-tls-secret
+    - hosts:
+        - dev.api.school.emfi.cm
+      secretName: api-tls-secret
+    - hosts:
+        - dev.school.emfi.cm
+      secretName: admin-tls-secret
