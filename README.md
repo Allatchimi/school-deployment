@@ -67,8 +67,6 @@ Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/schoo
 
 - ------------- On your GitHub Action Secrets page -------------
 
-  - Ser Secret `SSH_HOST` with the value of the server IP or domain name
-
   - Set Secret `SSH_KEY`. SSH_KEY is the private key without the passphrase used to login into the server. You can use this command to show the file content:
 
     ```
@@ -81,7 +79,9 @@ Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/schoo
     cat ~/.ssh/id_rsa
     ```
 
-  - Set Secret `SSH_USER` with default value `ci`
+  - Set Secret `SSH_USER` on the server. The default value is `ci`
+
+  - Set Secret `SSH_KEY_GITHUB`. SSH_KEY_GITHUB is the private key without the passphrase used to clone the template repository.
 
   - Set Secrets `GHCR_EMAIL` `GHCR_PASSWORD` `GHCR_USERNAME` with value your GitHub credentials. `GHCR_PASSWORD` is your GitHub personal access token with `read package` permission enabled
 
