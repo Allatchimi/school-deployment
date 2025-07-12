@@ -4,7 +4,7 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: prosper.abouar@emfi.cm
+    email: letsencrypt-admin-prod@digitcore.cm
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-prod-account-key
@@ -20,7 +20,7 @@ metadata:
   name: letsencrypt-fake
 spec:
   acme:
-    email: prosper.abouar@emfi.cm
+    email: letsencrypt-admin-fake@digitcore.cm
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-fake-account-key
