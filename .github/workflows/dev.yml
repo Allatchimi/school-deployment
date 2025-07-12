@@ -25,34 +25,27 @@ jobs:
 
       - name: Install SSH keys
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          mkdir -p $HOME/.ssh
+          chmod 700 $HOME/.ssh
+          printf "%s" "${{ secrets.SSH_KEY }}" | tr -d '\r' > $HOME/.ssh/temp_key
+          chmod 600 $HOME/.ssh/temp_key
+          chmod 600 $HOME/.ssh/temp_key
+          FIRST_LINE=$(head -n 1 $HOME/.ssh/temp_key)
+          KEY_FILE="$HOME/.ssh/temp_key"
 
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/temp_key
-          chmod 600 ~/.ssh/temp_key
-          FIRST_LINE=$(head -n 1 ~/.ssh/temp_key)
-
-          if echo "$FIRST_LINE" | grep -q "RSA PRIVATE KEY"; then
-            mv ~/.ssh/temp_key ~/.ssh/id_rsa
-            echo "✅ Detected RSA key"
-          elif echo "$FIRST_LINE" | grep -q "OPENSSH PRIVATE KEY"; then
-            mv ~/.ssh/temp_key ~/.ssh/id_ed25519
-            echo "✅ Detected ED25519 or OpenSSH formatted key"
-          else
-            echo "❌ Unsupported or unknown key type"
+          ssh-keygen -lf $KEY_FILE || {
+            echo "Invalid SSH key"
             exit 1
-          fi
+          }
 
-          if ssh-keygen -lf ~/.ssh/id_rsa 2>/dev/null; then
-              echo "✅ Valid RSA key detected."
-          elif ssh-keygen -lf ~/.ssh/id_ed25519 2>/dev/null; then
-              echo "✅ Valid ED25519 key detected."
-          else
-              echo "❌ Unable to read SSH key with ssh-keygen. Possible passphrase detected or invalid key."
-              exit 1
-          fi
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> $HOME/.ssh/known_hosts
 
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          # Configure SSH to use the correct identity file for this host
+          echo "Host ${{ secrets.SSH_HOST }}" > $HOME/.ssh/config
+          echo "  User ${{ secrets.SSH_USER }}" >> $HOME/.ssh/config
+          echo "  IdentityFile $KEY_FILE" >> $HOME/.ssh/config
+          echo "  StrictHostKeyChecking yes" >> $HOME/.ssh/config
+          chmod 600 $HOME/.ssh/config
 
       - name: Remove old project files from server
         continue-on-error: true
@@ -64,7 +57,7 @@ jobs:
 
       - name: Copy the repository files to the server
         run: |
-          scp -P 22 -i ~/.ssh/id_rsa -r ../${{ env.REPOSITORY_NAME }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_DEV }}
+          scp -P 22 -r ../${{ env.REPOSITORY_NAME }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_DEV }}
 
       - name: Kubernetes - Apply letsencrypt certificates
         run: |
@@ -115,7 +108,7 @@ jobs:
           echo "$API_JWT_PRIVATE_KEY" > private.pem
           echo "$API_JWT_PUBLIC_KEY" > public.pem
 
-          scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }}
+          scp -P 22 postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }}
           rm postgres.env redis.env app.env private.pem public.pem
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
@@ -159,4 +152,4 @@ jobs:
           make k-apply-ingress-dev"
 
       - name: Cleanup SSH dir
-        run: rm -rf ~/.ssh
+        run: rm -rf $HOME/.ssh
