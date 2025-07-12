@@ -25,48 +25,27 @@ jobs:
 
       - name: Install SSH keys
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          mkdir -p $HOME/.ssh
+          chmod 700 $HOME/.ssh
+          printf "%s" "${{ secrets.SSH_KEY }}" | tr -d '\r' > $HOME/.ssh/temp_key
+          chmod 600 $HOME/.ssh/temp_key
+          chmod 600 $HOME/.ssh/temp_key
+          FIRST_LINE=$(head -n 1 $HOME/.ssh/temp_key)
+          KEY_FILE="$HOME/.ssh/temp_key"
 
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/temp_key
-          chmod 600 ~/.ssh/temp_key
-          FIRST_LINE=$(head -n 1 ~/.ssh/temp_key)
-
-          if echo "$FIRST_LINE" | grep -q "RSA PRIVATE KEY"; then
-            mv ~/.ssh/temp_key ~/.ssh/id_rsa
-            KEY_FILE="~/.ssh/id_rsa"
-            echo "✅ Detected RSA key"
-          elif echo "$FIRST_LINE" | grep -q "OPENSSH PRIVATE KEY"; then
-            mv ~/.ssh/temp_key ~/.ssh/id_ed25519
-            KEY_FILE="~/.ssh/id_ed25519"
-            echo "✅ Detected ED25519 or OpenSSH formatted key"
-          else
-            echo "❌ Unsupported or unknown key type"
-            exit 1
-          fi
-
-          ssh-keygen -lf "$KEY_FILE" || {
-            echo "❌ Invalid SSH key"
+          ssh-keygen -lf $KEY_FILE || {
+            echo "Invalid SSH key"
             exit 1
           }
 
-          if ssh-keygen -lf ~/.ssh/$KEY_FILE 2>/dev/null; then
-              echo "✅ Valid RSA key detected."
-          elif ssh-keygen -lf ~/.ssh/$KEY_FILE 2>/dev/null; then
-              echo "✅ Valid ED25519 key detected."
-          else
-              echo "❌ Unable to read SSH key with ssh-keygen. Possible passphrase detected or invalid key."
-              exit 1
-          fi
-
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> $HOME/.ssh/known_hosts
 
           # Configure SSH to use the correct identity file for this host
-          echo "Host ${{ secrets.SSH_HOST }}" > ~/.ssh/config
-          echo "  User ${{ secrets.SSH_USER }}" >> ~/.ssh/config
-          echo "  IdentityFile $KEY_FILE" >> ~/.ssh/config
-          echo "  StrictHostKeyChecking yes" >> ~/.ssh/config
-          chmod 600 ~/.ssh/config
+          echo "Host ${{ secrets.SSH_HOST }}" > $HOME/.ssh/config
+          echo "  User ${{ secrets.SSH_USER }}" >> $HOME/.ssh/config
+          echo "  IdentityFile $KEY_FILE" >> $HOME/.ssh/config
+          echo "  StrictHostKeyChecking yes" >> $HOME/.ssh/config
+          chmod 600 $HOME/.ssh/config
 
       - name: Remove old project files from server
         continue-on-error: true
