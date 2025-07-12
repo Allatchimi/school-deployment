@@ -25,12 +25,12 @@ jobs:
 
       - name: Install SSH keys
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
+          mkdir -p $HOME/.ssh
+          chmod 700 $HOME/.ssh
 
-          printf "%s" "${{ secrets.SSH_KEY }}" > ~/.ssh/temp_key
-          chmod 600 ~/.ssh/temp_key
-          KEY_FILE="~/.ssh/temp_key"
+          printf "%s" "${{ secrets.SSH_KEY }}" > $HOME/.ssh/temp_key
+          chmod 600 $HOME/.ssh/temp_key
+          KEY_FILE="$HOME/.ssh/temp_key"
           cat "$KEY_FILE"
           chmod 600 ~/.ssh/temp_key
           FIRST_LINE=$(head -n 1 ~/.ssh/temp_key)
