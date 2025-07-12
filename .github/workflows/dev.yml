@@ -38,8 +38,6 @@ jobs:
           elif echo "$FIRST_LINE" | grep -q "OPENSSH PRIVATE KEY"; then
             mv $HOME/.ssh/temp_key $HOME/.ssh/id_ed25519
             KEY_FILE="$HOME/.ssh/id_ed25519"
-            # Convert key to PEM format
-            ssh-keygen -p -f $KEY_FILE -m PEM -N "" -P ""
           else
             echo "Unsupported key type"
             exit 1
