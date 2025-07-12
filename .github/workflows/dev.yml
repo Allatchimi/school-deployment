@@ -45,14 +45,9 @@ jobs:
             exit 1
           fi
 
-          ssh-keygen -lf "$KEY_FILE" || {
-            echo "❌ Invalid SSH key"
-            exit 1
-          }
-
-          if ssh-keygen -lf ~/.ssh/$KEY_FILE 2>/dev/null; then
+          if ssh-keygen -lf "$KEY_FILE" 2>/dev/null; then
               echo "✅ Valid RSA key detected."
-          elif ssh-keygen -lf ~/.ssh/$KEY_FILE 2>/dev/null; then
+          elif ssh-keygen -lf "$KEY_FILE" 2>/dev/null; then
               echo "✅ Valid ED25519 key detected."
           else
               echo "❌ Unable to read SSH key with ssh-keygen. Possible passphrase detected or invalid key."
