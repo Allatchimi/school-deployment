@@ -31,21 +31,9 @@ jobs:
           chmod 600 $HOME/.ssh/temp_key
           chmod 600 $HOME/.ssh/temp_key
           FIRST_LINE=$(head -n 1 $HOME/.ssh/temp_key)
-
-          if echo "$FIRST_LINE" | grep -q "RSA PRIVATE KEY"; then
-            mv $HOME/.ssh/temp_key $HOME/.ssh/id_rsa
-            KEY_FILE="$HOME/.ssh/id_rsa"
-          elif echo "$FIRST_LINE" | grep -q "OPENSSH PRIVATE KEY"; then
-            mv $HOME/.ssh/temp_key $HOME/.ssh/id_ed25519
-            KEY_FILE="$HOME/.ssh/id_ed25519"
-          else
-            echo "Unsupported key type"
-            exit 1
-          fi
+          KEY_FILE="$HOME/.ssh/temp_key"
 
           ssh-keygen -lf $KEY_FILE || {
-            NEW_HEAD=$(head -n 2 $KEY_FILE | cut -c 1-40)
-            echo "Invalid SSH key: $NEW_HEAD"
             echo "Invalid SSH key"
             exit 1
           }
