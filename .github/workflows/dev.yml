@@ -31,27 +31,8 @@ jobs:
           printf "%s" "${{ secrets.SSH_KEY }}" > $HOME/.ssh/temp_key
           chmod 600 $HOME/.ssh/temp_key
           KEY_FILE="$HOME/.ssh/temp_key"
-          cat "$KEY_FILE"
           chmod 600 ~/.ssh/temp_key
           FIRST_LINE=$(head -n 1 ~/.ssh/temp_key)
-
-          if echo "$FIRST_LINE" | grep -q "RSA PRIVATE KEY"; then
-            echo "✅ Detected RSA key"
-          elif echo "$FIRST_LINE" | grep -q "OPENSSH PRIVATE KEY"; then
-            echo "✅ Detected ED25519 or OpenSSH formatted key"
-          else
-            echo "❌ Unsupported or unknown key type"
-            exit 1
-          fi
-
-          if ssh-keygen -lf "$KEY_FILE" 2>/dev/null; then
-            echo "✅ Valid RSA key detected."
-          elif ssh-keygen -lf "$KEY_FILE" 2>/dev/null; then
-            echo "✅ Valid ED25519 key detected."
-          else
-            echo "❌ Unable to read SSH key with ssh-keygen. Possible passphrase detected or invalid key."
-            exit 1
-          fi
 
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
