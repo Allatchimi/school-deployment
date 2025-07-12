@@ -28,9 +28,10 @@ jobs:
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
 
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/temp_key
+          printf "%s" "${{ secrets.SSH_KEY }}" > ~/.ssh/temp_key
+          chmod 600 ~/.ssh/temp_key
           KEY_FILE="~/.ssh/temp_key"
-          cat $KEY_FILE
+          cat "$KEY_FILE"
           chmod 600 ~/.ssh/temp_key
           FIRST_LINE=$(head -n 1 ~/.ssh/temp_key)
 
