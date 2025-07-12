@@ -30,9 +30,19 @@ jobs:
 
           printf "%s" "${{ secrets.SSH_KEY }}" > $HOME/.ssh/temp_key
           chmod 600 $HOME/.ssh/temp_key
-          KEY_FILE="$HOME/.ssh/temp_key"
           chmod 600 ~/.ssh/temp_key
           FIRST_LINE=$(head -n 1 ~/.ssh/temp_key)
+
+          if echo "$FIRST_LINE" | grep -q "RSA PRIVATE KEY"; then
+            mv ~/.ssh/temp_key ~/.ssh/id_rsa
+            KEY_FILE="$HOME/.ssh/id_rsa"
+          elif echo "$FIRST_LINE" | grep -q "OPENSSH PRIVATE KEY"; then
+            mv ~/.ssh/temp_key ~/.ssh/id_ed25519
+            KEY_FILE="$HOME/.ssh/id_ed25519"
+          else
+            echo "Unsupported key type"
+            exit 1
+          fi
 
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
