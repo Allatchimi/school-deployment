@@ -29,16 +29,14 @@ jobs:
           chmod 700 ~/.ssh
 
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/temp_key
+          KEY_FILE="~/.ssh/temp_key"
+          cat $KEY_FILE
           chmod 600 ~/.ssh/temp_key
           FIRST_LINE=$(head -n 1 ~/.ssh/temp_key)
 
           if echo "$FIRST_LINE" | grep -q "RSA PRIVATE KEY"; then
-            mv ~/.ssh/temp_key ~/.ssh/id_rsa
-            KEY_FILE="~/.ssh/id_rsa"
             echo "✅ Detected RSA key"
           elif echo "$FIRST_LINE" | grep -q "OPENSSH PRIVATE KEY"; then
-            mv ~/.ssh/temp_key ~/.ssh/id_ed25519
-            KEY_FILE="~/.ssh/id_ed25519"
             echo "✅ Detected ED25519 or OpenSSH formatted key"
           else
             echo "❌ Unsupported or unknown key type"
@@ -46,13 +44,12 @@ jobs:
           fi
 
           if ssh-keygen -lf "$KEY_FILE" 2>/dev/null; then
-              echo "✅ Valid RSA key detected."
+            echo "✅ Valid RSA key detected."
           elif ssh-keygen -lf "$KEY_FILE" 2>/dev/null; then
-              echo "✅ Valid ED25519 key detected."
+            echo "✅ Valid ED25519 key detected."
           else
-              cat $KEY_FILE
-              echo "❌ Unable to read SSH key with ssh-keygen. Possible passphrase detected or invalid key."
-              exit 1
+            echo "❌ Unable to read SSH key with ssh-keygen. Possible passphrase detected or invalid key."
+            exit 1
           fi
 
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
