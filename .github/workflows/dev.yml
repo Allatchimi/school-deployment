@@ -50,6 +50,7 @@ jobs:
           elif ssh-keygen -lf "$KEY_FILE" 2>/dev/null; then
               echo "✅ Valid ED25519 key detected."
           else
+              cat $KEY_FILE
               echo "❌ Unable to read SSH key with ssh-keygen. Possible passphrase detected or invalid key."
               exit 1
           fi
