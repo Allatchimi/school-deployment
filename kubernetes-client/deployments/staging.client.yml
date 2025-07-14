@@ -4,7 +4,7 @@ metadata:
   name: client
   namespace: {{NAMESPACE}}
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: client
@@ -17,16 +17,16 @@ spec:
         - name: ghcr-secret
       containers:
         - name: client
-          image: "ghcr.io/emenec-finance/school-client-deployments/school-client-{{SCHOOL_ID}}-staging:{{TAG}}"
+          image: "ghcr.io/emenec-finance/school-clients/school-client-{{SCHOOL_ID}}-staging:{{TAG}}"
           ports:
             - containerPort: 3000
           resources:
             limits:
               cpu: "250m"
-              memory: "300Mi"
+              memory: "256Mi"
             requests:
               cpu: "150m"
-              memory: "150Mi"
+              memory: "128Mi"
           livenessProbe:
             httpGet:
               path: api/healthz/live

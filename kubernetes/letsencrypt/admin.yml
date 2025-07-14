@@ -7,7 +7,7 @@ spec:
     email: letsencrypt-admin-prod@digitcore.cm
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
-      name: letsencrypt-prod-account-key
+      name: letsencrypt-account-key-prod
     solvers:
       - http01:
           ingress:
@@ -23,7 +23,7 @@ spec:
     email: letsencrypt-admin-fake@digitcore.cm
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
-      name: letsencrypt-fake-account-key
+      name: letsencrypt-account-key-fake
     solvers:
       - http01:
           ingress:
