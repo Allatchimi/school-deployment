@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: emfi-school-postgres-dev
+  name: school-postgres-dev
 spec:
   storageClassName: standard
   volumeMode: Filesystem
@@ -11,7 +11,7 @@ spec:
   capacity:
       storage: 2Gi
   local:
-    path: /mnt/node/data/apps/emfi/school/postgres/dev
+    path: /mnt/node/data/apps/school/postgres/dev
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -19,7 +19,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - emfi # Cluster/node name
+          - digitcore # Cluster/node name
 
 ---
 apiVersion: v1
@@ -28,7 +28,7 @@ metadata:
   name: postgres
   namespace: school-dev
 spec:
-  volumeName: emfi-school-postgres-dev
+  volumeName: school-postgres-dev
   storageClassName: standard
   accessModes:
     - ReadWriteOnce

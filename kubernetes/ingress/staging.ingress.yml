@@ -34,7 +34,7 @@ spec:
   tls:
     - hosts:
         - staging.api.digitcore.cm
-      secretName: api-tls-secret
+      secretName: school-api-tls-secret
     - hosts:
         - staging.digitcore.cm
-      secretName: admin-tls-secret
+      secretName: school-admin-tls-secret

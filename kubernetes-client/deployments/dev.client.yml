@@ -17,7 +17,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: client
-          image: "ghcr.io/emenec-finance/school-client-deployments/school-client-{{SCHOOL_ID}}-dev:{{TAG}}"
+          image: "ghcr.io/emenec-finance/school-clients/school-client-{{SCHOOL_ID}}-dev:{{TAG}}"
           ports:
             - containerPort: 3000
           resources:
