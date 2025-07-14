@@ -73,8 +73,8 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
           cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
-          make k-apply-letsencrypt-admin || true && \
-          make k-apply-letsencrypt-api || true"
+          make k-apply-letsencrypt-admin  && \
+          make k-apply-letsencrypt-api"
 
       - name: Kubernetes - Create PV and PVC
         continue-on-error: true
