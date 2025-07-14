@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: emfi-school-redis-prod
+  name: school-redis-prod
 spec:
   storageClassName: standard
   volumeMode: Filesystem
@@ -11,7 +11,7 @@ spec:
   capacity:
       storage: 10Gi
   local:
-    path: /mnt/node/data/apps/emfi/school/redis/prod
+    path: /mnt/node/data/apps/school/redis/prod
   nodeAffinity:
     required:
       nodeSelectorTerms:
@@ -19,7 +19,7 @@ spec:
         - key: kubernetes.io/hostname
           operator: In
           values:
-          - emfi # Cluster/node name
+          - digitcore # Cluster/node name
 
 ---
 apiVersion: v1
@@ -28,7 +28,7 @@ metadata:
   name: redis
   namespace: school-prod
 spec:
-  volumeName: emfi-school-redis-prod
+  volumeName: school-redis-prod
   storageClassName: standard
   accessModes:
     - ReadWriteOnce

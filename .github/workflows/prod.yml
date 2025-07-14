@@ -16,7 +16,9 @@ jobs:
       API_JWT_PUBLIC_KEY: ${{ secrets.API_JWT_PUBLIC_KEY_PROD }}
       NAMESPACE: "school-prod"
       REPOSITORY_NAME: ${{ github.event.repository.name }}
-
+    environment:
+      name: "Production"
+      url: https://www.digitcore.cm
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.7
@@ -27,17 +29,19 @@ jobs:
         run: |
           mkdir -p $HOME/.ssh
           chmod 700 $HOME/.ssh
-          printf "%s" "${{ secrets.SSH_KEY }}" | tr -d '\r' > $HOME/.ssh/temp_key
+
+          cat > $HOME/.ssh/temp_key << 'EOF'
+          ${{ secrets.SSH_KEY }}
+          EOF
+
           chmod 600 $HOME/.ssh/temp_key
-          chmod 600 $HOME/.ssh/temp_key
-          FIRST_LINE=$(head -n 1 $HOME/.ssh/temp_key)
           KEY_FILE="$HOME/.ssh/temp_key"
 
           ssh-keygen -lf $KEY_FILE || {
             echo "Invalid SSH key"
             exit 1
           }
-
+            
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> $HOME/.ssh/known_hosts
 
           # Configure SSH to use the correct identity file for this host
@@ -57,19 +61,20 @@ jobs:
 
       - name: Copy the repository files to the server
         run: |
-          scp -P 22 -i ~/.ssh/id_rsa -r ../${{ env.REPOSITORY_NAME }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_PROD }}
-
-      - name: Kubernetes - Apply letsencrypt certificates
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          cd ${{ secrets.WORK_DIR_CI_PROD }}/${{ env.REPOSITORY_NAME }} && \
-          make k-apply-letsencrypt || true"
+          scp -P 22 -r ../${{ env.REPOSITORY_NAME }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_PROD }}
 
       - name: Kubernetes - Create namespaces
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
           cd ${{ secrets.WORK_DIR_CI_PROD }}/${{ env.REPOSITORY_NAME }} && \
           make k-create-namespaces || true"
+
+      - name: Kubernetes - Apply letsencrypt certificates
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_PROD }}/${{ env.REPOSITORY_NAME }} && \
+          make k-apply-letsencrypt-admin || true && \
+          make k-apply-letsencrypt-api || true"
 
       - name: Kubernetes - Create PV and PVC
         continue-on-error: true
@@ -95,10 +100,10 @@ jobs:
       - name: Kubernetes - Delete config map
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} || echo 'postgres-env-config already exists or failed!' && \
-          kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} || echo 'redis-env-config already exists or failed!' && \
-          kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} || echo 'api-env-config already exists or failed!' && \
-          kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} || echo 'api-jwt-config already exists or failed!'"
+          kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} || echo 'postgres-env-config does not exist or failed to delete!' ; \
+          kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} || echo 'redis-env-config does not exist or failed to delete!' ; \
+          kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} || echo 'api-env-config does not exist or failed to delete!' ; \
+          kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} || echo 'api-jwt-config does not exist or failed to delete!'"
 
       - name: Kubernetes - Create config map
         run: |
@@ -108,15 +113,16 @@ jobs:
           echo "$API_JWT_PRIVATE_KEY" > private.pem
           echo "$API_JWT_PUBLIC_KEY" > public.pem
 
-          scp -P 22 -i ~/.ssh/id_rsa postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_PROD }}/${{ env.REPOSITORY_NAME }}
-          rm postgres.env redis.env app.env private.pem public.pem
+          scp -P 22 postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_PROD }}/${{ env.REPOSITORY_NAME }}
+          rm -f postgres.env redis.env app.env private.pem public.pem
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
           cd ${{ secrets.WORK_DIR_CI_PROD }}/${{ env.REPOSITORY_NAME }} && set -e && \
           kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
-          kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }}"
+          kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }} && \
+          rm -f postgres.env redis.env app.env private.pem public.pem"
 
       - name: Kubernetes - Apply deployments
         run: |
@@ -152,4 +158,30 @@ jobs:
           make k-apply-ingress-prod"
 
       - name: Cleanup SSH dir
-        run: rm -rf ~/.ssh
+        run: rm -rf $HOME/.ssh
+
+      - name: Health check API
+        timeout-minutes: 10
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          echo '🔄 Waiting for API pods to be ready...' && \
+          kubectl wait --for=condition=ready pod -l app=api --namespace ${{ env.NAMESPACE }} --timeout=300s && \
+          echo '✅ Pods are ready! Checking services...' && \
+          kubectl get services --namespace ${{ env.NAMESPACE }} && \
+          echo '✅ Services status:' && \
+          kubectl get pods -l app=api --namespace ${{ env.NAMESPACE }} -o wide && \
+          echo '🎉 API deployment successful!' || \
+          (echo '❌ API deployment failed!' && kubectl describe pods -l app=api --namespace ${{ env.NAMESPACE }} && exit 1)"
+
+      - name: Health check Admin
+        timeout-minutes: 10
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          echo '🔄 Waiting for Admin pods to be ready...' && \
+          kubectl wait --for=condition=ready pod -l app=admin --namespace ${{ env.NAMESPACE }} --timeout=300s && \
+          echo '✅ Pods are ready! Checking services...' && \
+          kubectl get services --namespace ${{ env.NAMESPACE }} && \
+          echo '✅ Services status:' && \
+          kubectl get pods -l app=admin --namespace ${{ env.NAMESPACE }} -o wide && \
+          echo '🎉 Admin deployment successful!' || \
+          (echo '❌ Admin deployment failed!' && kubectl describe pods -l app=admin --namespace ${{ env.NAMESPACE }} && exit 1)"

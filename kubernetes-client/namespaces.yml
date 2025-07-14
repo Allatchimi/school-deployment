@@ -1,5 +1,4 @@
 # Development
----
 kind: Namespace
 apiVersion: v1
 metadata:
@@ -7,8 +6,8 @@ metadata:
     labels:
         name: client-{{ID}}-dev
 
-# Staging
 ---
+# Staging
 kind: Namespace
 apiVersion: v1
 metadata:
@@ -16,8 +15,8 @@ metadata:
     labels:
         name: client-{{ID}}-staging
 
-# Production
 ---
+# Production
 kind: Namespace
 apiVersion: v1
 metadata:

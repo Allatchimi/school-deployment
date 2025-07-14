@@ -14,8 +14,9 @@ spec:
         app: postgres
     spec:
       securityContext:
-        runAsUser: 999 # Standard UID of Postgres
-        fsGroup: 999 # Applies to the mounted volume
+        runAsUser: 2203 # UID
+        runAsGroup: 2203 # GID
+        fsGroup: 2203 # Applies to the mounted volume
       volumes:
         - name: postgres-data-volume
           persistentVolumeClaim:

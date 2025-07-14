@@ -14,8 +14,9 @@ spec:
         app: redis
     spec:
       securityContext:
-        runAsUser: 100 # Standard UID of Redis
-        fsGroup: 101 # Applies to the mounted volume
+        runAsUser: 2102 # UID
+        runAsGroup: 2102 # GID
+        fsGroup: 2102 # Applies to the mounted volume
       volumes:
         - name: redis-data-volume
           persistentVolumeClaim:
