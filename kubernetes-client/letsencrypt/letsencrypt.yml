@@ -4,7 +4,7 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: letsencrypt-client-{{ SCHOOL_ID }}-prod@digitcore.cm
+    email: letsencrypt-client-{{SCHOOL_ID}}-prod@digitcore.cm
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-account-key-prod
@@ -20,7 +20,7 @@ metadata:
   name: letsencrypt-fake
 spec:
   acme:
-    email: letsencrypt-client-{{ SCHOOL_ID }}-fake@digitcore.cm
+    email: letsencrypt-client-{{SCHOOL_ID}}-fake@digitcore.cm
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-account-key-fake
