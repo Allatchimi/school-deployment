@@ -4,12 +4,11 @@ metadata:
   name: ingress-school
   namespace: school-dev
   annotations:
-    ingressClassName: traefik
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: sslredirect@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
     cert-manager.io/cluster-issuer: "letsencrypt-fake"
 spec:
+  ingressClassName: traefik
   rules:
     - host: dev.api.digitcore.cm
       http:
@@ -34,7 +33,5 @@ spec:
   tls:
     - hosts:
         - dev.api.digitcore.cm
-      secretName: school-api-tls-secret
-    - hosts:
         - dev.digitcore.cm
-      secretName: school-admin-tls-secret
+      secretName: school-tls-secret
