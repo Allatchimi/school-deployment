@@ -4,11 +4,11 @@ metadata:
   name: ingress-school-client
   namespace: {{NAMESPACE}}
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/use-regex: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
     cert-manager.io/cluster-issuer: {{LETSENCRYPT_CLUSTER_ISSUER}}
 spec:
+  ingressClassName: traefik
   rules:
     - host: {{DOMAIN_NAME}}
       http:
