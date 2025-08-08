@@ -4,7 +4,7 @@ metadata:
   name: api
   namespace: school-staging
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: api
@@ -47,11 +47,11 @@ spec:
               subPath: public.pem
           resources:
             limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
               cpu: "250m"
               memory: "256Mi"
-            requests:
-              cpu: "150m"
-              memory: "128Mi"
           livenessProbe:
             httpGet:
               path: /api/v1/healthz/live
