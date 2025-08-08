@@ -121,8 +121,7 @@ jobs:
           kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
-          kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }} && \
-          rm -f postgres.env redis.env app.env private.pem public.pem"
+          kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }}"
 
       - name: Kubernetes - Apply deployments
         run: |
