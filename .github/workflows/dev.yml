@@ -90,6 +90,7 @@ jobs:
       - name: Kubernetes - Create secrets
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }} && \
           kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} \
           --docker-server=https://ghcr.io \
           --docker-username=${{secrets.GHCR_USERNAME}} \
