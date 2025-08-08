@@ -47,11 +47,11 @@ spec:
               subPath: public.pem
           resources:
             limits:
-              cpu: "400m"
-              memory: "820Mi"
+              cpu: "1000m"
+              memory: "1024Mi"
             requests:
-              cpu: "200m"
-              memory: "410Mi"
+              cpu: "500m"
+              memory: "512Mi"
           livenessProbe:
             httpGet:
               path: /api/v1/healthz/live
