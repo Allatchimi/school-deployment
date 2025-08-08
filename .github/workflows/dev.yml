@@ -156,27 +156,5 @@ jobs:
           cd ${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }} && \
           make k-apply-ingress-dev"
 
-      - name: Wait for pods to be ready
-        timeout-minutes: 5
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          echo '🔄 Waiting for School pods to be ready...' && \
-          kubectl wait --for=condition=ready pod -l app=postgres --namespace ${{ env.NAMESPACE }} --timeout=30s && \
-          kubectl wait --for=condition=ready pod -l app=redis --namespace ${{ env.NAMESPACE }} --timeout=30s && \
-          kubectl wait --for=condition=ready pod -l app=api --namespace ${{ env.NAMESPACE }} --timeout=120s && \
-          kubectl wait --for=condition=ready pod -l app=admin --namespace ${{ env.NAMESPACE }} --timeout=120s"
-
-      - name: Verify deployment
-        timeout-minutes: 2
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          echo '✅ Pods are ready! Checking services...' && \
-          kubectl get services --namespace ${{ env.NAMESPACE }} && \
-          kubectl get pods -l app=postgres --namespace ${{ env.NAMESPACE }} -o wide && \
-          kubectl get pods -l app=redis --namespace ${{ env.NAMESPACE }} -o wide && \
-          kubectl get pods -l app=api --namespace ${{ env.NAMESPACE }} -o wide && \
-          kubectl get pods -l app=admin --namespace ${{ env.NAMESPACE }} -o wide && \
-          echo '🎉 School deployment successful!'"
-
       - name: Cleanup SSH dir
         run: rm -rf $HOME/.ssh
