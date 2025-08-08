@@ -2,11 +2,9 @@
 k-create-namespaces:
 	@kubectl create -f ./kubernetes/namespaces.yml
 
-.PHONY: k-apply-letsencrypt-admin k-apply-letsencrypt-api
-k-apply-letsencrypt-admin:
-	@kubectl apply -f ./kubernetes/letsencrypt/admin.yml
-k-apply-letsencrypt-api:
-	@kubectl apply -f ./kubernetes/letsencrypt/api.yml
+.PHONY: k-apply-letsencrypt
+k-apply-letsencrypt:
+	@kubectl apply -f ./kubernetes/letsencrypt/letsencrypt.yml
 
 .PHONY: k-apply-volume-dev k-apply-volume-staging k-apply-volume-prod
 k-apply-volume-dev:
