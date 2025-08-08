@@ -2,6 +2,7 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: sslredirect
+  namespace: kube-system
 spec:
   redirectScheme:
     scheme: https

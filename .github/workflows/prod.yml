@@ -73,8 +73,7 @@ jobs:
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
           cd ${{ secrets.WORK_DIR_CI_PROD }}/${{ env.REPOSITORY_NAME }} && \
-          make k-apply-letsencrypt-admin  && \
-          make k-apply-letsencrypt-api"
+          make k-apply-letsencrypt"
 
       - name: Kubernetes - Create PV and PVC
         continue-on-error: true
@@ -121,8 +120,7 @@ jobs:
           kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
-          kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }} && \
-          rm -f postgres.env redis.env app.env private.pem public.pem"
+          kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }}"
 
       - name: Kubernetes - Apply deployments
         run: |
@@ -157,31 +155,27 @@ jobs:
           cd ${{ secrets.WORK_DIR_CI_PROD }}/${{ env.REPOSITORY_NAME }} && \
           make k-apply-ingress-prod"
 
+      - name: Wait for pods to be ready
+        timeout-minutes: 5
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          echo '🔄 Waiting for School pods to be ready...' && \
+          kubectl wait --for=condition=ready pod -l app=postgres --namespace ${{ env.NAMESPACE }} --timeout=30s && \
+          kubectl wait --for=condition=ready pod -l app=redis --namespace ${{ env.NAMESPACE }} --timeout=30s && \
+          kubectl wait --for=condition=ready pod -l app=api --namespace ${{ env.NAMESPACE }} --timeout=120s && \
+          kubectl wait --for=condition=ready pod -l app=admin --namespace ${{ env.NAMESPACE }} --timeout=120s"
+
+      - name: Verify deployment
+        timeout-minutes: 2
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          echo '✅ Pods are ready! Checking services...' && \
+          kubectl get services --namespace ${{ env.NAMESPACE }} && \
+          kubectl get pods -l app=postgres --namespace ${{ env.NAMESPACE }} -o wide && \
+          kubectl get pods -l app=redis --namespace ${{ env.NAMESPACE }} -o wide && \
+          kubectl get pods -l app=api --namespace ${{ env.NAMESPACE }} -o wide && \
+          kubectl get pods -l app=admin --namespace ${{ env.NAMESPACE }} -o wide && \
+          echo '🎉 School deployment successful!'"
+
       - name: Cleanup SSH dir
         run: rm -rf $HOME/.ssh
-
-      - name: Health check API
-        timeout-minutes: 10
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          echo '🔄 Waiting for API pods to be ready...' && \
-          kubectl wait --for=condition=ready pod -l app=api --namespace ${{ env.NAMESPACE }} --timeout=300s && \
-          echo '✅ Pods are ready! Checking services...' && \
-          kubectl get services --namespace ${{ env.NAMESPACE }} && \
-          echo '✅ Services status:' && \
-          kubectl get pods -l app=api --namespace ${{ env.NAMESPACE }} -o wide && \
-          echo '🎉 API deployment successful!' || \
-          (echo '❌ API deployment failed!' && kubectl describe pods -l app=api --namespace ${{ env.NAMESPACE }} && exit 1)"
-
-      - name: Health check Admin
-        timeout-minutes: 10
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          echo '🔄 Waiting for Admin pods to be ready...' && \
-          kubectl wait --for=condition=ready pod -l app=admin --namespace ${{ env.NAMESPACE }} --timeout=300s && \
-          echo '✅ Pods are ready! Checking services...' && \
-          kubectl get services --namespace ${{ env.NAMESPACE }} && \
-          echo '✅ Services status:' && \
-          kubectl get pods -l app=admin --namespace ${{ env.NAMESPACE }} -o wide && \
-          echo '🎉 Admin deployment successful!' || \
-          (echo '❌ Admin deployment failed!' && kubectl describe pods -l app=admin --namespace ${{ env.NAMESPACE }} && exit 1)"

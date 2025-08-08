@@ -34,11 +34,11 @@ spec:
               mountPath: /var/lib/postgresql/data
           resources:
             limits:
-              cpu: "300m"
-              memory: "300Mi"
+              cpu: "1000m"
+              memory: "1024Mi"
             requests:
-              cpu: "200m"
-              memory: "400Mi"
+              cpu: "500m"
+              memory: "512Mi"
           livenessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
