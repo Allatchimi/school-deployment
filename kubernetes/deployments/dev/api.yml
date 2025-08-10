@@ -57,15 +57,15 @@ spec:
             httpGet:
               path: /api/v1/healthz/live
               port: 3100
-            initialDelaySeconds: 180
-            periodSeconds: 30
-            timeoutSeconds: 10
-            failureThreshold: 5
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
           readinessProbe:
             httpGet:
               path: /api/v1/healthz/dependencies
               port: 3100
-            initialDelaySeconds: 120
-            periodSeconds: 60
-            timeoutSeconds: 10
-            failureThreshold: 6
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
