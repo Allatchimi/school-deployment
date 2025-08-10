@@ -18,6 +18,7 @@ spec:
       containers:
         - name: admin
           image: "ghcr.io/emenec-finance/school-template/school-admin:latest"
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           resources:

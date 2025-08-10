@@ -33,6 +33,7 @@ spec:
       containers:
         - name: api
           image: "ghcr.io/emenec-finance/school-api/school-api:latest"
+          imagePullPolicy: Always
           ports:
             - containerPort: 3100
           volumeMounts:
