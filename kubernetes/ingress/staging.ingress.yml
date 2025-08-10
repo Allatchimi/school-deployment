@@ -4,9 +4,7 @@ metadata:
   name: ingress-school
   namespace: school-staging
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
-    cert-manager.io/cluster-issuer: "letsencrypt-fake"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   ingressClassName: traefik
   rules:
@@ -30,8 +28,3 @@ spec:
                 name: admin
                 port:
                   number: 3000
-  tls:
-    - hosts:
-        - staging.api.digitcore.cm
-        - staging.digitcore.cm
-      secretName: school-tls-secret
