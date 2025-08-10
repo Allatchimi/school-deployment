@@ -94,4 +94,3 @@ Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/schoo
   - Add postgres environment variables: `POSTGRES_ENV_PROD`, `POSTGRES_ENV_STAGING`, `POSTGRES_ENV_DEV`
 
   - Add api environment variables: `API_ENV_PROD`, `API_ENV_STAGING`, `API_ENV_DEV`
-
