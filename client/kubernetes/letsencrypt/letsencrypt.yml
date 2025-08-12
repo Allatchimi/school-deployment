@@ -1,32 +1,66 @@
-# Production
+# Prod
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
 spec:
   acme:
-    email: letsencrypt-prod@digitcore.cm
+    email: ssl@digitcore.cm
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
-      name: letsencrypt-prod
+      name: letsencrypt-prod-private-key
     solvers:
       - http01:
           ingress:
-            class: traefik
+            ingressClassName: traefik
 
 ---
-# Fake
+# Staging
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
-  name: letsencrypt-fake
+  name: letsencrypt-staging
 spec:
   acme:
-    email: letsencrypt-fake@digitcore.cm
-    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: ssl+staging@digitcore.cm
+    server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
-      name: letsencrypt-fake
+      name: letsencrypt-staging-private-key
     solvers:
       - http01:
           ingress:
-            class: traefik
+            ingressClassName: traefik
+
+---
+# Dev
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-dev
+spec:
+  acme:
+    email: ssl+dev@digitcore.cm
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-dev-private-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik
+
+---
+# Debug
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-debug
+spec:
+  acme:
+    email: ssl+debug@digitcore.cm
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-debug-private-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik
