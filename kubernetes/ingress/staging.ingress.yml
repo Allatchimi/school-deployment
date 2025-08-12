@@ -1,11 +1,46 @@
+# Web socket API
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ingress-school
+  name: ingress-school-api-websocket
+  namespace: school-staging
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.priority: "100"
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-websocket-headers@kubernetescrd
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: staging.api.digitcore.cm
+      http:
+        paths:
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3100
+  tls:
+    - hosts:
+        - staging.api.digitcore.cm
+      secretName: school-api-ws-tls-secret
+
+---
+# Http API
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-school-api-http
   namespace: school-staging
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect-http@kubernetescrd
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.priority: "10"
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
 spec:
   ingressClassName: traefik
   rules:
@@ -19,6 +54,26 @@ spec:
                 name: api
                 port:
                   number: 3100
+  tls:
+    - hosts:
+        - staging.api.digitcore.cm
+      secretName: school-api-http-tls-secret
+
+---
+# Http Admin
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-school-admin-http
+  namespace: school-staging
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+spec:
+  ingressClassName: traefik
+  rules:
     - host: staging.digitcore.cm
       http:
         paths:
@@ -29,3 +84,7 @@ spec:
                 name: admin
                 port:
                   number: 3000
+  tls:
+    - hosts:
+        - staging.digitcore.cm
+      secretName: school-admin-http-tls-secret
