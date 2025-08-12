@@ -1,10 +1,44 @@
+# Web socket API
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ingress-school
+  name: ingress-school-api-websocket
+  namespace: school-prod
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.priority: "100"
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-websocket-headers@kubernetescrd
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: api.digitcore.cm
+      http:
+        paths:
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3100
+  tls:
+    - hosts:
+        - api.digitcore.cm
+      secretName: school-api-ws-tls-secret
+
+---
+# Http API
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-school-api-http
   namespace: school-prod
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.priority: "10"
     traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
     cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
@@ -20,6 +54,26 @@ spec:
                 name: api
                 port:
                   number: 3100
+  tls:
+    - hosts:
+        - api.digitcore.cm
+      secretName: school-api-http-tls-secret
+
+---
+# Http Admin
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-school-admin-http
+  namespace: school-prod
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: traefik
+  rules:
     - host: www.digitcore.cm
       http:
         paths:
@@ -32,6 +86,5 @@ spec:
                   number: 3000
   tls:
     - hosts:
-        - api.digitcore.cm
         - www.digitcore.cm
-      secretName: school-tls-secret
+      secretName: school-admin-http-tls-secret
