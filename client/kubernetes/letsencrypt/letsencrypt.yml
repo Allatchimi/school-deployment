@@ -5,7 +5,7 @@ metadata:
   name: letsencrypt-client-prod
 spec:
   acme:
-    email: ssl+client@digitcore.cm
+    email: ssl-client-prod@digitcore.cm
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-client-prod-private-key
@@ -22,7 +22,7 @@ metadata:
   name: letsencrypt-client-staging
 spec:
   acme:
-    email: ssl+client+staging@digitcore.cm
+    email: ssl-client+staging@digitcore.cm
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-client-staging-private-key
@@ -39,7 +39,7 @@ metadata:
   name: letsencrypt-client-dev
 spec:
   acme:
-    email: ssl+client+dev@digitcore.cm
+    email: ssl-client+dev@digitcore.cm
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-client-dev-private-key
@@ -56,7 +56,7 @@ metadata:
   name: letsencrypt-client-debug
 spec:
   acme:
-    email: ssl+client+debug@digitcore.cm
+    email: ssl-client+debug@digitcore.cm
     server: https://acme-staging-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: letsencrypt-client-debug-private-key
