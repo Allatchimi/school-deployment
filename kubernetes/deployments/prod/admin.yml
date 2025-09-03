@@ -17,7 +17,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: admin
-          image: "ghcr.io/emenec-finance/school-template/school-admin:165"
+          image: "ghcr.io/emenec-finance/school-template/school-admin:175"
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
