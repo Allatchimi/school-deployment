@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: school-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      securityContext:
+        runAsUser: 2102 # UID
+        runAsGroup: 2102 # GID
+        fsGroup: 2102 # Applies to the mounted volume
+      volumes:
+        - name: redis-data-volume
+          persistentVolumeClaim:
+            claimName: redis
+      containers:
+        - name: redis
+          image: "redis:8-alpine"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6379
+          envFrom:
+            - configMapRef:
+                name: redis-env-config
+          volumeMounts:
+            - name: redis-data-volume
+              mountPath: /data
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

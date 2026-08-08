@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: school-prod
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      volumes:
+        - name: api-env-volume
+          configMap:
+            name: api-env-config
+            items:
+              - key: app.env
+                path: app.env
+        - name: api-jwt-volume
+          configMap:
+            name: api-jwt-config
+            items:
+              - key: private.pem
+                path: private.pem
+              - key: public.pem
+                path: public.pem
+      containers:
+        - name: api
+          image: "ghcr.io/emenec-finance/school-api/school-api:63"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3100
+          volumeMounts:
+            - name: api-env-volume
+              mountPath: /app/app.env
+              subPath: app.env
+            - name: api-jwt-volume
+              mountPath: /app/assets/private/keys/jwt/private.pem
+              subPath: private.pem
+            - name: api-jwt-volume
+              mountPath: /app/assets/private/keys/jwt/public.pem
+              subPath: public.pem
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/healthz/live
+              port: 3100
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /api/v1/healthz/dependencies
+              port: 3100
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

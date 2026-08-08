@@ -1,0 +1,39 @@
+# Websocket
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: websocket-headers
+  namespace: kube-system
+spec:
+  headers:
+    customRequestHeaders:
+      Connection: "upgrade"
+      Upgrade: "websocket"
+    customResponseHeaders:
+      Access-Control-Allow-Origin: "*"
+      Access-Control-Allow-Methods: "GET, POST, OPTIONS"
+      Access-Control-Allow-Headers: "Origin, Content-Type, Accept, Authorization, X-Requested-With"
+
+---
+# Https
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: sslredirect
+  namespace: kube-system
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+
+---
+# Http
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: sslredirect-http
+  namespace: kube-system
+spec:
+  redirectScheme:
+    scheme: http
+    permanent: true

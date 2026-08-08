@@ -1,0 +1,159 @@
+name: School Staging CI
+run-name: ${{ github.actor }} is deploying School to Staging
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+jobs:
+  deploy-school-k3s:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_ENV: ${{ secrets.POSTGRES_ENV_STAGING }}
+      REDIS_ENV: ${{ secrets.REDIS_ENV_STAGING }}
+      API_ENV: ${{ secrets.API_ENV_STAGING }}
+      API_JWT_PRIVATE_KEY: ${{ secrets.API_JWT_PRIVATE_KEY_STAGING }}
+      API_JWT_PUBLIC_KEY: ${{ secrets.API_JWT_PUBLIC_KEY_STAGING }}
+      NAMESPACE: "school-staging"
+      REPOSITORY_NAME: ${{ github.event.repository.name }}
+    environment:
+      name: "Staging"
+      url: https://staging.digitcore.cm
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.7
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Install SSH keys
+        run: |
+          mkdir -p $HOME/.ssh
+          chmod 700 $HOME/.ssh
+
+          cat > $HOME/.ssh/temp_key << 'EOF'
+          ${{ secrets.SSH_KEY }}
+          EOF
+
+          chmod 600 $HOME/.ssh/temp_key
+          KEY_FILE="$HOME/.ssh/temp_key"
+
+          ssh-keygen -lf $KEY_FILE || {
+            echo "Invalid SSH key"
+            exit 1
+          }
+            
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> $HOME/.ssh/known_hosts
+
+          # Configure SSH to use the correct identity file for this host
+          echo "Host ${{ secrets.SSH_HOST }}" > $HOME/.ssh/config
+          echo "  User ${{ secrets.SSH_USER }}" >> $HOME/.ssh/config
+          echo "  IdentityFile $KEY_FILE" >> $HOME/.ssh/config
+          echo "  StrictHostKeyChecking yes" >> $HOME/.ssh/config
+          chmod 600 $HOME/.ssh/config
+
+      - name: Remove old project files from server
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          mkdir -p ${{ secrets.WORK_DIR_CI_STAGING }} && \
+          cd ${{ secrets.WORK_DIR_CI_STAGING }} && \
+          rm -rf ${{ env.REPOSITORY_NAME }}"
+
+      - name: Copy the repository files to the server
+        run: |
+          scp -P 22 -r ../${{ env.REPOSITORY_NAME }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_STAGING }}
+
+      - name: Kubernetes - Create namespaces
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
+          make k-create-namespaces || true"
+
+      - name: Kubernetes - Apply letsencrypt certificates
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
+          make k-apply-letsencrypt"
+
+      - name: Kubernetes - Create PV and PVC
+        continue-on-error: true
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
+          make k-apply-volume-staging || true"
+
+      - name: Kubernetes - Delete secrets
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          kubectl delete secret ghcr-secret --namespace ${{ env.NAMESPACE }} || true"
+
+      - name: Kubernetes - Create secrets
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          kubectl create secret docker-registry ghcr-secret --namespace ${{ env.NAMESPACE }} \
+          --docker-server=https://ghcr.io \
+          --docker-username=${{secrets.GHCR_USERNAME}} \
+          --docker-password=${{secrets.GHCR_PASSWORD}} \
+          --docker-email=${{secrets.GHCR_EMAIL}}"
+
+      - name: Kubernetes - Delete config map
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} || echo 'postgres-env-config does not exist or failed to delete!' ; \
+          kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} || echo 'redis-env-config does not exist or failed to delete!' ; \
+          kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} || echo 'api-env-config does not exist or failed to delete!' ; \
+          kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} || echo 'api-jwt-config does not exist or failed to delete!'"
+
+      - name: Kubernetes - Create config map
+        run: |
+          echo "$POSTGRES_ENV" > postgres.env
+          echo "$REDIS_ENV" > redis.env
+          echo "$API_ENV" > app.env
+          echo "$API_JWT_PRIVATE_KEY" > private.pem
+          echo "$API_JWT_PUBLIC_KEY" > public.pem
+
+          scp -P 22 postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }}
+          rm -f postgres.env redis.env app.env private.pem public.pem
+
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && set -e && \
+          kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
+          kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
+          kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
+          kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }}"
+
+      - name: Kubernetes - Apply deployments
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
+          set -e && \
+          make k-apply-deploy-redis-staging && \
+          make k-apply-deploy-postgres-staging && \
+          make k-apply-deploy-api-staging && \
+          make k-apply-deploy-admin-staging"
+
+      - name: Kubernetes - Apply services
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
+          set -e && \
+          kubectl apply -f ./kubernetes/services/redis.yml --namespace ${{ env.NAMESPACE }} && \
+          kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }} && \
+          kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }} && \
+          kubectl apply -f ./kubernetes/services/admin.yml --namespace ${{ env.NAMESPACE }}"
+
+      - name: Kubernetes - Apply middlewares
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
+          set -e && \
+          kubectl apply -f ./kubernetes/middlewares/sslredirect.yml"
+
+      - name: Kubernetes - Apply ingress
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
+          cd ${{ secrets.WORK_DIR_CI_STAGING }}/${{ env.REPOSITORY_NAME }} && \
+          make k-apply-ingress-staging"
+
+      - name: Cleanup SSH dir
+        run: rm -rf $HOME/.ssh

@@ -1,0 +1,25 @@
+# Development
+kind: Namespace
+apiVersion: v1
+metadata:
+    name: client-{{SCHOOL_ID}}-dev
+    labels:
+        name: client-{{SCHOOL_ID}}-dev
+
+---
+# Staging
+kind: Namespace
+apiVersion: v1
+metadata:
+    name: client-{{SCHOOL_ID}}-staging
+    labels:
+        name: client-{{SCHOOL_ID}}-staging
+
+---
+# Production
+kind: Namespace
+apiVersion: v1
+metadata:
+    name: client-{{SCHOOL_ID}}-prod
+    labels:
+        name: client-{{SCHOOL_ID}}-prod

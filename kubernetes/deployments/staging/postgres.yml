@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: school-staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      securityContext:
+        runAsUser: 2202 # UID
+        runAsGroup: 2202 # GID
+        fsGroup: 2202 # Applies to the mounted volume
+      volumes:
+        - name: postgres-data-volume
+          persistentVolumeClaim:
+            claimName: postgres
+      containers:
+        - name: postgres
+          image: "postgres:17-alpine"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-env-config
+          volumeMounts:
+            - name: postgres-data-volume
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1024Mi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
