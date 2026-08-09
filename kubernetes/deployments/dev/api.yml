@@ -32,7 +32,7 @@ spec:
                 path: public.pem
       containers:
         - name: api
-          image: "ghcr.io/emenec-finance/school-api/school-api:63"
+          image: "ghcr.io/allatchimi/school-api/school-api:63"
           imagePullPolicy: Always
           ports:
             - containerPort: 3100
