@@ -63,7 +63,7 @@ sudo chmod -R 770 /mnt/node/data/apps/school/postgres/dev
 
 # Step 2: Update GitHub Action Secrets for continuous integration
 
-Go to this link: [GitHub Action Secrets](https://github.com/EMENEC-FINANCE/school-deployment/settings/secrets/actions)
+Go to this link: [GitHub Action Secrets](https://github.com/Allatchimi/school-deployment/settings/secrets/actions)
 
 - ------------- On your GitHub Action Secrets page -------------
 
