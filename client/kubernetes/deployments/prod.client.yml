@@ -17,7 +17,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: client
-          image: "ghcr.io/Allatchimi/school-clients-deployment/school-client-{{SCHOOL_ID}}:{{TAG}}"
+          image: "ghcr.io/allatchimi/school-clients-deployment/school-client-{{SCHOOL_ID}}:{{TAG}}"
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
