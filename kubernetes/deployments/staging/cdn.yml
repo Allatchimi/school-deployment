@@ -1,45 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: client
-  namespace: {{NAMESPACE}}
+  name: cdn
+  namespace: school-staging
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: client
+      app: cdn
   template:
     metadata:
       labels:
-        app: client
+        app: cdn
     spec:
       imagePullSecrets:
         - name: ghcr-secret
       containers:
-        - name: client
-          image: "ghcr.io/allatchimi/school-clients-deployment/school-client-{{SCHOOL_ID}}-staging:{{TAG}}"
+        - name: cdn
+          image: "ghcr.io/allatchimi/cdn/cdn:latest"
           imagePullPolicy: Always
           ports:
-            - containerPort: 3000
+            - containerPort: 3100
+          envFrom:
+            - secretRef:
+                name: cdn-env-secret
           resources:
             limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
               cpu: "250m"
               memory: "256Mi"
-            requests:
-              cpu: "150m"
-              memory: "128Mi"
           livenessProbe:
-            httpGet:
-              path: /api/healthz/live
-              port: 3000
+            tcpSocket:
+              port: 3100
             initialDelaySeconds: 20
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 6
           readinessProbe:
-            httpGet:
-              path: /api/healthz/live
-              port: 3000
+            tcpSocket:
+              port: 3100
             initialDelaySeconds: 10
             periodSeconds: 10
             timeoutSeconds: 5

@@ -12,6 +12,7 @@ jobs:
       POSTGRES_ENV: ${{ secrets.POSTGRES_ENV_DEV }}
       REDIS_ENV: ${{ secrets.REDIS_ENV_DEV }}
       API_ENV: ${{ secrets.API_ENV_DEV }}
+      CDN_ENV: ${{ secrets.CDN_ENV_DEV }}
       API_JWT_PRIVATE_KEY: ${{ secrets.API_JWT_PRIVATE_KEY_DEV }}
       API_JWT_PUBLIC_KEY: ${{ secrets.API_JWT_PUBLIC_KEY_DEV }}
       NAMESPACE: "school-dev"
@@ -103,6 +104,7 @@ jobs:
           kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} || echo 'postgres-env-config does not exist or failed to delete!' ; \
           kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} || echo 'redis-env-config does not exist or failed to delete!' ; \
           kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} || echo 'api-env-config does not exist or failed to delete!' ; \
+          kubectl delete secret cdn-env-secret --namespace ${{ env.NAMESPACE }} || echo 'cdn-env-secret does not exist or failed to delete!' ; \
           kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} || echo 'api-jwt-config does not exist or failed to delete!'"
 
       - name: Kubernetes - Create config map
@@ -110,17 +112,19 @@ jobs:
           echo "$POSTGRES_ENV" > postgres.env
           echo "$REDIS_ENV" > redis.env
           echo "$API_ENV" > app.env
+          echo "$CDN_ENV" > cdn.env
           echo "$API_JWT_PRIVATE_KEY" > private.pem
           echo "$API_JWT_PUBLIC_KEY" > public.pem
 
-          scp -P 22 postgres.env redis.env app.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }}
-          rm -f postgres.env redis.env app.env private.pem public.pem
+          scp -P 22 postgres.env redis.env app.env cdn.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }}
+          rm -f postgres.env redis.env app.env cdn.env private.pem public.pem
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
           cd ${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }} && set -e && \
           kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
+          kubectl create secret generic cdn-env-secret --from-env-file=cdn.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }}"
 
       - name: Kubernetes - Apply deployments
@@ -131,6 +135,7 @@ jobs:
           make k-apply-deploy-redis-dev && \
           make k-apply-deploy-postgres-dev && \
           make k-apply-deploy-api-dev && \
+          make k-apply-deploy-cdn-dev && \
           make k-apply-deploy-admin-dev"
 
       - name: Kubernetes - Apply services
@@ -141,6 +146,7 @@ jobs:
           kubectl apply -f ./kubernetes/services/redis.yml --namespace ${{ env.NAMESPACE }} && \
           kubectl apply -f ./kubernetes/services/postgres.yml --namespace ${{ env.NAMESPACE }} && \
           kubectl apply -f ./kubernetes/services/api.yml --namespace ${{ env.NAMESPACE }} && \
+          kubectl apply -f ./kubernetes/services/cdn.yml --namespace ${{ env.NAMESPACE }} && \
           kubectl apply -f ./kubernetes/services/admin.yml --namespace ${{ env.NAMESPACE }}"
 
       - name: Kubernetes - Apply middlewares

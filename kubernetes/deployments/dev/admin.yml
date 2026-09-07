@@ -18,9 +18,20 @@ spec:
       containers:
         - name: admin
           image: "ghcr.io/allatchimi/school-template/school-admin-dev:207"
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
+          env:
+            - name: API_BASE_URL
+              value: "http://api.school-dev:3100/api/v1"
+            - name: CDN_URL
+              value: "http://cdn.school-dev:3100/api/v1"
+            - name: NEXT_AUTH_URL
+              value: "https://dev.digitcore.cm"
+            - name: NEXT_PUBLIC_WEBSITE_URL
+              value: "https://dev.digitcore.cm"
+            - name: NEXT_PUBLIC_WS_URL
+              value: "wss://dev.api.digitcore.cm/ws"
           resources:
             limits:
               cpu: "500m"
@@ -30,7 +41,7 @@ spec:
               memory: "256Mi"
           livenessProbe:
             httpGet:
-              path: api/healthz/live
+              path: /api/healthz/live
               port: 3000
             initialDelaySeconds: 20
             periodSeconds: 10
@@ -38,7 +49,7 @@ spec:
             failureThreshold: 6
           readinessProbe:
             httpGet:
-              path: api/healthz/live
+              path: /api/healthz/live
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 10

@@ -1,3 +1,5 @@
+NAMESPACE ?= school-dev
+
 .PHONY: k-create-namespaces
 k-create-namespaces:
 	@kubectl create -f ./kubernetes/namespaces.yml
@@ -41,6 +43,16 @@ k-apply-deploy-api-staging:
 k-apply-deploy-api-prod:
 	@kubectl apply -f ./kubernetes/deployments/prod/api.yml
 
+.PHONY: k-apply-deploy-cdn-dev k-apply-deploy-cdn-staging k-apply-deploy-cdn-prod
+k-build-cdn-dev:
+	@docker build -t cdn:dev ../cdn -f ../cdn/docker/cdn/Dockerfile
+k-apply-deploy-cdn-dev:
+	@kubectl apply -f ./kubernetes/deployments/dev/cdn.yml
+k-apply-deploy-cdn-staging:
+	@kubectl apply -f ./kubernetes/deployments/staging/cdn.yml
+k-apply-deploy-cdn-prod:
+	@kubectl apply -f ./kubernetes/deployments/prod/cdn.yml
+
 .PHONY: k-apply-deploy-admin-dev k-apply-deploy-admin-staging k-apply-deploy-admin-prod
 k-apply-deploy-admin-dev:
 	@kubectl apply -f ./kubernetes/deployments/dev/admin.yml
@@ -51,10 +63,11 @@ k-apply-deploy-admin-prod:
 
 .PHONY: k-apply-services
 k-apply-services:
-	@kubectl apply -f ./kubernetes/services/redis.yml
-	@kubectl apply -f ./kubernetes/services/postgres.yml
-	@kubectl apply -f ./kubernetes/services/api.yml
-	@kubectl apply -f ./kubernetes/services/admin.yml
+	@kubectl apply -f ./kubernetes/services/redis.yml --namespace $(NAMESPACE)
+	@kubectl apply -f ./kubernetes/services/postgres.yml --namespace $(NAMESPACE)
+	@kubectl apply -f ./kubernetes/services/api.yml --namespace $(NAMESPACE)
+	@kubectl apply -f ./kubernetes/services/admin.yml --namespace $(NAMESPACE)
+	@kubectl apply -f ./kubernetes/services/cdn.yml --namespace $(NAMESPACE)
 
 .PHONY: k-apply-ingress-dev k-apply-ingress-staging k-apply-ingress-prod
 k-apply-ingress-dev:

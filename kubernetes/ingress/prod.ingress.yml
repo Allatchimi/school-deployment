@@ -67,10 +67,10 @@ metadata:
   name: ingress-school-admin-http
   namespace: school-prod
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: traefik
   rules:
@@ -88,3 +88,33 @@ spec:
     - hosts:
         - www.digitcore.cm
       secretName: school-admin-http-tls-secret
+
+---
+# Http CDN
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-school-cdn-http
+  namespace: school-prod
+  annotations:
+  traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+  traefik.ingress.kubernetes.io/router.tls: "true"
+  traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
+  cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: cdn.digitcore.cm
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cdn
+                port:
+                  number: 3100
+  tls:
+    - hosts:
+        - cdn.digitcore.cm
+      secretName: school-cdn-http-tls-secret

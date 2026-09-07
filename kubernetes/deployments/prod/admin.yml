@@ -21,6 +21,17 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
+          env:
+            - name: API_BASE_URL
+              value: "http://api.school-prod:3100/api/v1"
+            - name: CDN_URL
+              value: "http://cdn.school-prod:3100/api/v1"
+            - name: NEXT_AUTH_URL
+              value: "https://www.digitcore.cm"
+            - name: NEXT_PUBLIC_WEBSITE_URL
+              value: "https://www.digitcore.cm"
+            - name: NEXT_PUBLIC_WS_URL
+              value: "wss://api.digitcore.cm/ws"
           resources:
             limits:
               cpu: "1000m"
@@ -30,7 +41,7 @@ spec:
               memory: "512Mi"
           livenessProbe:
             httpGet:
-              path: api/healthz/live
+              path: /api/healthz/live
               port: 3000
             initialDelaySeconds: 20
             periodSeconds: 10
@@ -38,7 +49,7 @@ spec:
             failureThreshold: 6
           readinessProbe:
             httpGet:
-              path: api/healthz/live
+              path: /api/healthz/live
               port: 3000
             initialDelaySeconds: 10
             periodSeconds: 10
