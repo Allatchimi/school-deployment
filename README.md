@@ -95,6 +95,7 @@ Go to this link: [GitHub Action Secrets](https://github.com/Allatchimi/school-de
 
   - Add api environment variables: `API_ENV_PROD`, `API_ENV_STAGING`, `API_ENV_DEV`
   - Add CDN environment variables: `CDN_ENV_PROD`, `CDN_ENV_STAGING`, `CDN_ENV_DEV`.
+  - Add admin environment variables: `ADMIN_ENV_PROD`, `ADMIN_ENV_STAGING`, `ADMIN_ENV_DEV`.
     Each value is stored as the `cdn-env-secret`, must configure the CDN on port
     `3100`, point `MINIO_ENDPOINT` to the external MinIO DNS name, and contain the
     CDN `API_KEY` and `CDN_KEY` values used by the frontend proxy.
@@ -114,6 +115,10 @@ Go to this link: [GitHub Action Secrets](https://github.com/Allatchimi/school-de
     kubectl rollout status deployment/cdn -n school-dev
     ```
 
+    The development deployment now uses the same GHCR CDN image as staging and production.
+    The cluster must therefore have `ghcr-secret` in `school-dev`; the old local `cdn:dev`
+    image is no longer referenced by Kubernetes.
+
     If the Docker build reports Alpine `DNS: transient error` or `no such
     package`, retry the build after checking Docker/OrbStack network access.
     The CDN Dockerfile uses tags available in the existing build and retries
@@ -123,3 +128,40 @@ Go to this link: [GitHub Action Secrets](https://github.com/Allatchimi/school-de
     unstable Docker network or access problem to `proxy.golang.org`.
   - Ensure the API environment values use the in-cluster URLs:
     `SCHOOL_CDN_URL=http://cdn.<namespace>:3100/api/v1`.
+
+## Selective development deployments
+
+From this directory, after namespaces and required Secrets exist:
+
+```bash
+make k-deploy-cdn-dev
+make k-deploy-api-dev
+make k-deploy-admin-dev
+make k-deploy-stack-dev
+make cdn-restore FILE=cdn_backup_20260908_150522.tar.gz
+make db-restore FILE=backup_local_20260908_143522.sql
+
+```
+
+`k-deploy-api-dev` also applies Redis and Postgres services/deployments. The complete target
+applies volumes, CDN, API, admin, and the development ingress in dependency order.
+
+## OrbStack local access
+
+The `school-dev` ingress is HTTP-only for local OrbStack use. Let’s Encrypt cannot validate
+private OrbStack addresses. Get the Traefik address and add it to `/etc/hosts`:
+
+```bash
+kubectl get svc traefik -n kube-system \
+  -o jsonpath='{.status.loadBalancer.ingress[0].ip}{"\n"}'
+sudo sh -c 'echo "<TRAEFIK_IP> dev.digitcore.cm dev.api.digitcore.cm dev.cdn.digitcore.cm" >> /etc/hosts'
+kubectl apply -f kubernetes/ingress/dev.ingress.yml
+```
+
+Use `http://` locally:
+
+```text
+http://dev.digitcore.cm
+http://dev.api.digitcore.cm/api/v1/healthz/live
+http://dev.cdn.digitcore.cm
+```

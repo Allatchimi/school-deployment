@@ -29,8 +29,8 @@ spec:
           ports:
             - containerPort: 6379
           envFrom:
-            - configMapRef:
-                name: redis-env-config
+            - secretRef:
+                name: redis-env-secret
           volumeMounts:
             - name: redis-data-volume
               mountPath: /data

@@ -97,10 +97,10 @@ metadata:
   name: ingress-school-cdn-http
   namespace: school-staging
   annotations:
-  traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-  traefik.ingress.kubernetes.io/router.tls: "true"
-  traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
-  cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
 spec:
   ingressClassName: traefik
   rules:

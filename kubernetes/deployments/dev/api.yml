@@ -17,14 +17,14 @@ spec:
         - name: ghcr-secret
       volumes:
         - name: api-env-volume
-          configMap:
-            name: api-env-config
+          secret:
+            secretName: api-env-secret
             items:
               - key: app.env
                 path: app.env
         - name: api-jwt-volume
-          configMap:
-            name: api-jwt-config
+          secret:
+            secretName: api-jwt-secret
             items:
               - key: private.pem
                 path: private.pem
@@ -32,8 +32,8 @@ spec:
                 path: public.pem
       containers:
         - name: api
-          image: "ghcr.io/allatchimi/school-api/school-api:latest"
-          imagePullPolicy: Always
+          image: "ghcr.io/allatchimi/school-api/school-api:lastest"
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3100
           volumeMounts:

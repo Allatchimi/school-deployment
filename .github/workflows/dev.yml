@@ -13,6 +13,7 @@ jobs:
       REDIS_ENV: ${{ secrets.REDIS_ENV_DEV }}
       API_ENV: ${{ secrets.API_ENV_DEV }}
       CDN_ENV: ${{ secrets.CDN_ENV_DEV }}
+      ADMIN_ENV: ${{ secrets.ADMIN_ENV_DEV }}
       API_JWT_PRIVATE_KEY: ${{ secrets.API_JWT_PRIVATE_KEY_DEV }}
       API_JWT_PUBLIC_KEY: ${{ secrets.API_JWT_PUBLIC_KEY_DEV }}
       NAMESPACE: "school-dev"
@@ -101,11 +102,12 @@ jobs:
       - name: Kubernetes - Delete config map
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
-          kubectl delete configmap postgres-env-config --namespace ${{ env.NAMESPACE }} || echo 'postgres-env-config does not exist or failed to delete!' ; \
-          kubectl delete configmap redis-env-config --namespace ${{ env.NAMESPACE }} || echo 'redis-env-config does not exist or failed to delete!' ; \
-          kubectl delete configmap api-env-config --namespace ${{ env.NAMESPACE }} || echo 'api-env-config does not exist or failed to delete!' ; \
+          kubectl delete secret postgres-env-secret --namespace ${{ env.NAMESPACE }} || echo 'postgres-env-secret does not exist or failed to delete!' ; \
+          kubectl delete secret redis-env-secret --namespace ${{ env.NAMESPACE }} || echo 'redis-env-secret does not exist or failed to delete!' ; \
+          kubectl delete secret api-env-secret --namespace ${{ env.NAMESPACE }} || echo 'api-env-secret does not exist or failed to delete!' ; \
           kubectl delete secret cdn-env-secret --namespace ${{ env.NAMESPACE }} || echo 'cdn-env-secret does not exist or failed to delete!' ; \
-          kubectl delete configmap api-jwt-config --namespace ${{ env.NAMESPACE }} || echo 'api-jwt-config does not exist or failed to delete!'"
+          kubectl delete secret admin-env-secret --namespace ${{ env.NAMESPACE }} || echo 'admin-env-secret does not exist or failed to delete!' ; \
+          kubectl delete secret api-jwt-secret --namespace ${{ env.NAMESPACE }} || echo 'api-jwt-secret does not exist or failed to delete!'"
 
       - name: Kubernetes - Create config map
         run: |
@@ -113,19 +115,21 @@ jobs:
           echo "$REDIS_ENV" > redis.env
           echo "$API_ENV" > app.env
           echo "$CDN_ENV" > cdn.env
+          echo "$ADMIN_ENV" > admin.env
           echo "$API_JWT_PRIVATE_KEY" > private.pem
           echo "$API_JWT_PUBLIC_KEY" > public.pem
 
-          scp -P 22 postgres.env redis.env app.env cdn.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }}
-          rm -f postgres.env redis.env app.env cdn.env private.pem public.pem
+          scp -P 22 postgres.env redis.env app.env cdn.env admin.env private.pem public.pem ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }}
+          rm -f postgres.env redis.env app.env cdn.env admin.env private.pem public.pem
 
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
           cd ${{ secrets.WORK_DIR_CI_DEV }}/${{ env.REPOSITORY_NAME }} && set -e && \
-          kubectl create configmap postgres-env-config --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
-          kubectl create configmap redis-env-config --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
-          kubectl create configmap api-env-config --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
+          kubectl create secret generic postgres-env-secret --from-env-file=postgres.env --namespace ${{ env.NAMESPACE }} && \
+          kubectl create secret generic redis-env-secret --from-env-file=redis.env --namespace ${{ env.NAMESPACE }} && \
+          kubectl create secret generic api-env-secret --from-file=app.env --namespace ${{ env.NAMESPACE }} && \
           kubectl create secret generic cdn-env-secret --from-env-file=cdn.env --namespace ${{ env.NAMESPACE }} && \
-          kubectl create configmap api-jwt-config --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }}"
+          kubectl create secret generic admin-env-secret --from-file=.env=admin.env --namespace ${{ env.NAMESPACE }} && \
+          kubectl create secret generic api-jwt-secret --from-file=private.pem --from-file=public.pem --namespace ${{ env.NAMESPACE }}"
 
       - name: Kubernetes - Apply deployments
         run: |

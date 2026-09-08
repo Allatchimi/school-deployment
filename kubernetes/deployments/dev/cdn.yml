@@ -23,7 +23,7 @@ spec:
             - containerPort: 3100
           env:
             - name: MINIO_ENDPOINT
-              value: "192.168.0.199:9000"
+              value: "192.168.0.200:9000"
             - name: MINIO_USE_SSL
               value: "false"
           envFrom:

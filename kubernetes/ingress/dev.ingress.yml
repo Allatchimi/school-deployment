@@ -5,11 +5,9 @@ metadata:
   name: ingress-school-api-websocket
   namespace: school-dev
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
     traefik.ingress.kubernetes.io/router.priority: "100"
     traefik.ingress.kubernetes.io/router.middlewares: kube-system-websocket-headers@kubernetescrd
-    cert-manager.io/cluster-issuer: "letsencrypt-dev"
 spec:
   ingressClassName: traefik
   rules:
@@ -23,11 +21,6 @@ spec:
                 name: api
                 port:
                   number: 3100
-  tls:
-    - hosts:
-        - dev.api.digitcore.cm
-      secretName: school-api-ws-tls-secret
-
 ---
 # Http API
 apiVersion: networking.k8s.io/v1
@@ -36,11 +29,8 @@ metadata:
   name: ingress-school-api-http
   namespace: school-dev
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
     traefik.ingress.kubernetes.io/router.priority: "10"
-    traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
-    cert-manager.io/cluster-issuer: "letsencrypt-dev"
 spec:
   ingressClassName: traefik
   rules:
@@ -54,11 +44,6 @@ spec:
                 name: api
                 port:
                   number: 3100
-  tls:
-    - hosts:
-        - dev.api.digitcore.cm
-      secretName: school-api-http-tls-secret
-
 ---
 # Http Admin
 apiVersion: networking.k8s.io/v1
@@ -67,10 +52,7 @@ metadata:
   name: ingress-school-admin-http
   namespace: school-dev
   annotations:
-      traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-      traefik.ingress.kubernetes.io/router.tls: "true"
-      traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
-      cert-manager.io/cluster-issuer: "letsencrypt-dev"
+      traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   ingressClassName: traefik
   rules:
@@ -84,11 +66,6 @@ spec:
                 name: admin
                 port:
                   number: 3000
-  tls:
-    - hosts:
-        - dev.digitcore.cm
-      secretName: school-admin-http-tls-secret
-
 ---
 # Http CDN
 apiVersion: networking.k8s.io/v1
@@ -97,10 +74,7 @@ metadata:
   name: ingress-school-cdn-http
   namespace: school-dev
   annotations:
-  traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
-  traefik.ingress.kubernetes.io/router.tls: "true"
-  traefik.ingress.kubernetes.io/router.middlewares: kube-system-sslredirect@kubernetescrd
-  cert-manager.io/cluster-issuer: "letsencrypt-dev"
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   ingressClassName: traefik
   rules:
@@ -114,7 +88,3 @@ spec:
                 name: cdn
                 port:
                   number: 3100
-  tls:
-    - hosts:
-        - dev.cdn.digitcore.cm
-      secretName: school-cdn-http-tls-secret

@@ -28,8 +28,8 @@ spec:
           ports:
             - containerPort: 5432
           envFrom:
-            - configMapRef:
-                name: postgres-env-config
+            - secretRef:
+                name: postgres-env-secret
           volumeMounts:
             - name: postgres-data-volume
               mountPath: /var/lib/postgresql/data
